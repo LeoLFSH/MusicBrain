@@ -79,6 +79,20 @@
   .controls .label { font: 12px var(--mono); color: var(--label); margin-right: 4px; }
   .pill { font: 13px var(--body); color: var(--label); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
   .pill:hover { color: var(--ink); }
+  .quad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 760px) { .quad { grid-template-columns: 1fr; } }
+  .chart.mini { height: 230px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .card { background: var(--sleeve); border: 1px solid var(--groove); border-radius: 12px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .card header { display: flex; gap: 10px; align-items: baseline; }
+  .card .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; transform: translateY(1px); }
+  .card h3 { font: 600 17px/1.3 var(--body); margin: 0; }
+  .card .size { margin-left: auto; font: 13px var(--mono); color: var(--label); white-space: nowrap; }
+  .card .share { height: 4px; border-radius: 2px; background: var(--groove); overflow: hidden; }
+  .card .share i { display: block; height: 100%; }
+  .card p { font-size: 14px; }
+  .card .side { margin-top: 4px; }
+  .card .show { justify-self: start; }
   .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
   @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
   .explorer select { font: 14px var(--body); color: var(--ink); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 8px; padding: 5px 8px; }
@@ -144,9 +158,10 @@
 <nav class="tracklist" aria-label="Sections">
   <ol class="wrap">
     <li><a href="#sound"><i>A1</i>Sound</a></li>
-    <li><a href="#feeling"><i>A2</i>Feeling</a></li>
-    <li><a href="#explore"><i>A3</i>Explore</a></li>
-    <li><a href="#mood"><i>A4</i>Mood</a></li>
+    <li><a href="#clusters"><i>A2</i>Clusters</a></li>
+    <li><a href="#feeling"><i>A3</i>Feeling</a></li>
+    <li><a href="#explore"><i>A4</i>Explore</a></li>
+    <li><a href="#mood"><i>A5</i>Mood</a></li>
     <li><a href="#harmony"><i>B1</i>Harmony</a></li>
     <li><a href="#rhythm"><i>B2</i>Rhythm</a></li>
     <li><a href="#instruments"><i>B3</i>Instruments</a></li>
@@ -177,6 +192,7 @@
     <div class="controls" role="group" aria-label="Colour the galaxy by">
       <span class="label">Colour by</span>
       <button class="pill" data-color="genre" aria-pressed="true">Genre</button>
+      <button class="pill" data-color="cluster" aria-pressed="false">Cluster</button>
       <button class="pill" data-color="v" aria-pressed="false">Happiness</button>
       <button class="pill" data-color="a" aria-pressed="false">Energy</button>
       <button class="pill" data-color="bpm" aria-pressed="false">Tempo</button>
@@ -188,9 +204,28 @@
     <p class="method">Discogs-EffNet embeddings → UMAP (cosine, 20 neighbours). "Sounds like" uses the full 1,280-number embeddings, not the flat map.</p>
   </section>
 
+  <section class="track" id="clusters">
+    <div class="track-head">
+      <div class="side"><b>A2</b> · Clusters</div>
+      <h2>My taste clusters</h2>
+      <p>K-Means groups songs whose sound fingerprints sit close together. I tried every number of clusters from 2 to
+        20 and kept the one that is both well separated and reproducible. The names come from what is distinctive in
+        each group: its Last.fm tags, Discogs styles and moods.</p>
+      <p class="finding" id="cl-finding">Loading…</p>
+      <p class="method" id="cl-method">Discogs-EffNet embeddings → L2-normalised → PCA (90% of variance) → K-Means (k-means++, 20 restarts)</p>
+    </div>
+    <div class="quad">
+      <div class="chart mini loading" id="k-inertia">Loading…</div>
+      <div class="chart mini loading" id="k-sil">Loading…</div>
+      <div class="chart mini loading" id="k-db">Loading…</div>
+      <div class="chart mini loading" id="k-stab">Loading…</div>
+    </div>
+    <div class="cards" id="cl-cards"></div>
+  </section>
+
   <section class="track" id="feeling">
     <div class="track-head">
-      <div class="side"><b>A2</b> · Feeling</div>
+      <div class="side"><b>A3</b> · Feeling</div>
       <h2>Emotion map</h2>
       <p>Every song placed by valence (sad → happy) and arousal (calm → intense) on a 1–9 scale.</p>
       <p class="finding">My library forms a diagonal band: calm songs lean melancholic, intense songs lean happy.
@@ -203,7 +238,7 @@
 
   <section class="track" id="explore">
     <div class="track-head">
-      <div class="side"><b>A3</b> · Explore</div>
+      <div class="side"><b>A4</b> · Explore</div>
       <h2>Sound explorer</h2>
       <p>Pick any two (or three) features and see how my songs spread out. Each dot is a song, coloured by genre.
         Switch to 3D to add a third axis, then drag to rotate.</p>
@@ -228,7 +263,7 @@
 
   <section class="track" id="mood">
     <div class="track-head">
-      <div class="side"><b>A4</b> · Mood</div>
+      <div class="side"><b>A5</b> · Mood</div>
       <h2>Then vs. now</h2>
       <p class="finding">Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
         songs dropped compared with the library as a whole.</p>
@@ -320,7 +355,6 @@
     <div class="side"><b>Side C</b> · Coming next</div>
     <h2 id="next-title">Still in the studio</h2>
     <ol>
-      <li><b>Taste clusters</b><span>K-Means on the sound embeddings and Last.fm tags, checked with silhouette and elbow plots.</span></li>
       <li><b>A recommender with range</b><span>Broad candidates, a small neural taste model, and ranking that rewards novelty.</span></li>
       <li><b>The people behind the music</b><span>Producers, engineers and session musicians from Discogs and MusicBrainz credits.</span></li>
       <li><b>Listening over time</b><span>Calendar heatmaps and forgotten favourites from my full Spotify history.</span></li>
@@ -430,6 +464,12 @@
     document.getElementById('st-minor').textContent = Math.round(100 * minor / keyed) + '%';
     document.getElementById('updated').textContent = 'data updated ' + D.updated;
 
+    // Taste clusters (from clusters.py), if present
+    var CL = D.clusters, CLN = CL ? CL.list.map(function (c) { return c.name; }) : [];
+    var byCluster = CLN.map(function () { return []; });
+    if (CL) for (i = 0; i < N; i++) if (S.k[i] != null) byCluster[S.k[i]].push(i);
+    if (!CL) { var cp = document.querySelector('[data-color="cluster"]'); if (cp) cp.hidden = true; }
+
     // ---------- A1 galaxy ----------
     var gal = ready('galaxy');
     // Fixed frame around all songs, so hiding genres or picking a song never re-zooms the map
@@ -451,12 +491,14 @@
       danceable: { title: 'Danceable', scale: [[0, '#1D6596'], [1, '#EEF3F7']], label: 'danceability' }
     };
     function galaxyTraces(mode) {
-      if (mode === 'genre') {
-        var t = G.map(function (g, gi) {
-          var idx = byGenre[gi];
+      if (mode === 'genre' || mode === 'cluster') {
+        var cats = mode === 'genre' ? G : CLN, groups = mode === 'genre' ? byGenre : byCluster;
+        var catColor = mode === 'genre' ? color : function (ci) { return SERIES[ci % SERIES.length]; };
+        var t = cats.map(function (g, gi) {
+          var idx = groups[gi];
           return { type: 'scattergl', mode: 'markers', name: g + ' (' + idx.length + ')', x: pick(S.x, idx), y: pick(S.y, idx),
                    text: pick(hover, idx), customdata: idx, hovertemplate: '%{text}<extra></extra>',
-                   marker: { size: narrow ? 5 : 6, color: color(gi), opacity: .85, line: { width: 0.5, color: GROUND } } };
+                   marker: { size: narrow ? 5 : 6, color: catColor(gi), opacity: .85, line: { width: 0.5, color: GROUND } } };
         }).reverse();
         return t;
       }
@@ -494,7 +536,82 @@
       });
     });
 
-    // ---------- A2 emotion map ----------
+    // ---------- A2 taste clusters ----------
+    var clSection = document.getElementById('clusters');
+    if (!CL) {
+      clSection.hidden = true;
+      var navItem = document.querySelector('nav.tracklist a[href="#clusters"]'); if (navItem) navItem.parentNode.hidden = true;
+    } else {
+      document.getElementById('cl-finding').textContent = CL.k + ' clusters came out best: they stay the same when the ' +
+        'model is refit on random 80% samples of my songs (stability ' + CL.stability.toFixed(2) + ' ± ' + CL.stability_sd.toFixed(2) +
+        '). The silhouette is low for every k (' + CL.silhouette.toFixed(3) + ' here): my taste is a continuum, so these are regions ' +
+        'of one galaxy with fuzzy borders, not separate islands.';
+      document.getElementById('cl-method').textContent += ' · ' + CL.pca + ' PCA components · silhouette ' + CL.silhouette.toFixed(3) +
+        ' · stability ARI ' + CL.stability.toFixed(2);
+      var sel = CL.selection;
+      if (sel) {
+        [['k-inertia', 'inertia', 'Elbow: inertia (lower = tighter)'], ['k-sil', 'silhouette', 'Silhouette (higher = better separated)'],
+         ['k-db', 'davies_bouldin', 'Davies-Bouldin (lower = better)'], ['k-stab', 'stability', 'Stability on 80% samples (higher = reproducible)']]
+        .forEach(function (m) {
+          var traces = [];
+          if (m[1] === 'stability') {
+            traces.push({ x: sel.k, y: sel.stability.map(function (v, j) { return v + sel.stability_sd[j]; }), mode: 'lines', line: { width: 0 }, hoverinfo: 'skip' });
+            traces.push({ x: sel.k, y: sel.stability.map(function (v, j) { return v - sel.stability_sd[j]; }), mode: 'lines', line: { width: 0 },
+                          fill: 'tonexty', fillcolor: 'rgba(29,101,150,.45)', hoverinfo: 'skip' });
+          }
+          traces.push({ type: 'scatter', mode: 'lines+markers', x: sel.k, y: sel[m[1]], line: { color: '#7DB8E4', width: 2 }, marker: { size: 5, color: '#7DB8E4' },
+                        hovertemplate: 'k = %{x}: %{y:.3f}<extra></extra>' });
+          Plotly.newPlot(ready(m[0]), traces, base({
+            margin: { l: 52, r: 12, t: 34, b: 36 }, showlegend: false,
+            title: { text: m[2], x: 0.03, xref: 'container', font: { color: INK, size: 13 } },
+            xaxis: axis('', { dtick: 2 }), yaxis: axis(''),
+            shapes: [{ type: 'line', x0: CL.k, x1: CL.k, yref: 'paper', y0: 0, y1: 1, line: { color: INK, width: 1, dash: 'dot' } }],
+            annotations: [{ x: CL.k, yref: 'paper', y: 1, text: 'k = ' + CL.k, showarrow: false, xanchor: 'left', xshift: 4, yanchor: 'top', font: { color: INK, size: 11 } }]
+          }), CONFIG);
+        });
+      }
+      var MOOD_WORD = { danceable: 'danceable', relaxed: 'relaxed', happy: 'happy', sad: 'sad', acoustic: 'acoustic',
+                        party: 'party', electronic: 'electronic', aggressive: 'intense' };
+      var songButton = function (j, extra) {
+        return '<li><button type="button" data-song="' + j + '"><i>♪</i><span>' + esc(S.name[j]) + ' <small>' + esc(S.artist[j]) +
+               (extra ? ' · ' + extra : '') + '</small></span></button></li>';
+      };
+      document.getElementById('cl-cards').innerHTML = CL.list.map(function (c, ci) {
+        var diffs = Object.keys(c.mood_vs_library).map(function (m) { return [m, c.mood_vs_library[m]]; })
+          .sort(function (a, b) { return Math.abs(b[1]) - Math.abs(a[1]); }).slice(0, 3);
+        var moodLine = diffs.map(function (d) { return (d[1] > 0 ? 'more ' : 'less ') + MOOD_WORD[d[0]] + ' ' + (d[1] > 0 ? '+' : '−') + Math.round(Math.abs(d[1]) * 100); }).join(', ');
+        var countries = Object.keys(c.countries).slice(0, 3).map(function (k) { return k + ' ' + Math.round(c.countries[k] * 100) + '%'; }).join(' · ');
+        return '<article class="card">' +
+          '<header><span class="dot" style="background:' + SERIES[ci % SERIES.length] + '"></span><h3>' + esc(c.name) + '</h3>' +
+          '<span class="size">' + fmt(c.size) + ' · ' + Math.round(c.share * 100) + '%</span></header>' +
+          '<div class="share"><i style="width:' + (c.share * 100 / CL.list[0].share * 100 / 100).toFixed(1) + '%;background:' + SERIES[ci % SERIES.length] + '"></i></div>' +
+          '<div class="facts">' + c.tags.map(function (t) { return '<span class="fact">' + esc(t) + '</span>'; }).join('') + '</div>' +
+          '<p>' + esc(c.styles.join(', ')) + ' · ' + c.bpm + ' BPM · valence ' + c.valence + ' · arousal ' + c.arousal + '</p>' +
+          '<p class="hint">Versus my whole library (percentage points): ' + moodLine + (countries ? '<br>From: ' + esc(countries) : '') + '</p>' +
+          '<div class="side">Most typical</div><ul class="alike">' + c.typical.slice(0, 4).map(function (j) { return songButton(j); }).join('') + '</ul>' +
+          (c.favourites.length ? '<div class="side">My favourites in it</div><ul class="alike">' +
+            c.favourites.slice(0, 3).map(function (j) { return songButton(j, 'top ' + S.rank[j]); }).join('') + '</ul>' : '') +
+          '<button type="button" class="pill show" data-show="' + ci + '">Show on the galaxy</button>' +
+          '</article>';
+      }).join('');
+      document.getElementById('cl-cards').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-song]');
+        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); return; }
+        var sh = e.target.closest('[data-show]');
+        if (sh) showClusterOnGalaxy(+sh.dataset.show);
+      });
+    }
+    function showClusterOnGalaxy(ci) {
+      galMode = 'cluster';
+      document.querySelectorAll('[data-color]').forEach(function (o) { o.setAttribute('aria-pressed', String(o.dataset.color === 'cluster')); });
+      drawGalaxy();
+      var want = CLN[ci] + ' (';
+      var vis = gal.data.map(function (t, k) { return k === gal.data.length - 1 || t.name.indexOf(want) === 0 ? true : 'legendonly'; });
+      Plotly.restyle(gal, { visible: vis });
+      document.getElementById('sound').scrollIntoView({ block: 'start' });
+    }
+
+    // ---------- A3 emotion map ----------
     var emo = ready('emotion');
     var vAll = S.v.filter(function (x) { return x != null; }), aAll = S.a.filter(function (x) { return x != null; });
     var vMean = vAll.reduce(function (s, x) { return s + x; }, 0) / vAll.length;
@@ -801,7 +918,8 @@
       Plotly.restyle(emo, { x: [[S.v[i]]], y: [[S.a[i]]] }, [emoSel]);
       input.value = labels[i];
       var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
-      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from].filter(Boolean);
+      var inCluster = CL && S.k[i] != null ? 'cluster: ' + CLN[S.k[i]] : null;
+      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from, inCluster].filter(Boolean);
       var meters = ['happy', 'sad', 'relaxed', 'danceable', 'acoustic', 'electronic'].map(function (m) {
         var p = Math.round((S[m][i] || 0) * 100);
         return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
