@@ -93,6 +93,8 @@
   .card p { font-size: 14px; }
   .card .side { margin-top: 4px; }
   .card .show { justify-self: start; }
+  .subhead { margin-top: 28px; }
+  .subhead h3 { font: 700 clamp(18px, 2.4vw, 22px)/1.25 var(--display); margin: 0; text-wrap: balance; }
   .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
   @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
   .explorer select { font: 14px var(--body); color: var(--ink); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 8px; padding: 5px 8px; }
@@ -221,6 +223,16 @@
       <div class="chart mini loading" id="k-stab">Loading…</div>
     </div>
     <div class="cards" id="cl-cards"></div>
+    <div class="track-head subhead" id="clap-head">
+      <div class="side">Second opinion · CLAP</div>
+      <h3>Does a second model hear the same clusters?</h3>
+      <p>CLAP is a completely different model: trained on audio paired with text descriptions instead of Discogs genre
+        labels. I ran it through exactly the same pipeline and compared its 7 clusters with mine. Each row shows where the
+        songs of one of my clusters end up in CLAP's clusters.</p>
+      <p class="finding" id="clap-finding">Loading…</p>
+      <p class="method" id="clap-method"></p>
+    </div>
+    <div class="chart tall loading" id="clap-matrix">Loading…</div>
   </section>
 
   <section class="track" id="feeling">
@@ -601,6 +613,45 @@
         if (sh) showClusterOnGalaxy(+sh.dataset.show);
       });
     }
+    // ---------- CLAP vs Essentia ----------
+    var CMP = CL && CL.clap;
+    if (!CMP) {
+      document.getElementById('clap-head').hidden = true; document.getElementById('clap-matrix').hidden = true;
+    } else {
+      var pc = function (v) { return Math.round(v * 100) + '%'; };
+      var agree = Object.keys(CMP.per_cluster).map(function (n) { return [n, CMP.per_cluster[n]]; }).sort(function (a, b) { return b[1] - a[1]; });
+      var weakest = agree[agree.length - 1];
+      document.getElementById('clap-finding').textContent =
+        'They agree far above chance, but not completely: ' + pc(CMP.matched_share) + ' of songs land in the matching cluster ' +
+        '(ARI ' + CMP.ari.toFixed(2) + ', where chance is 0.00 and my own model refit on new samples reaches ' + CMP.essentia_stability.toFixed(2) + '). ' +
+        agree.slice(0, 3).map(function (a) { return a[0] + ' ' + pc(a[1]); }).join(', ') + ' are heard the same way by both. ' +
+        weakest[0] + ' is the big disagreement (' + pc(weakest[1]) + '): CLAP has no such cluster. It splits those songs by sound texture, ' +
+        'not by era: guitar-heavy tracks go with rock, vocal and brass-heavy tracks go with Regional Mexican. Essentia learned genres from ' +
+        'Discogs labels; CLAP learned from descriptions of what instruments and voices sound like.';
+      document.getElementById('clap-method').textContent = 'CLAP (LAION clap-htsat-unfused, 512-d) → same pipeline, k = ' + CMP.k +
+        ' · Hungarian matching of clusters · NMI ' + CMP.nmi.toFixed(2) + ' · a song\'s 10 nearest neighbours overlap ' + pc(CMP.neighbour_overlap) +
+        ' between models (chance ' + (CMP.neighbour_random * 100).toFixed(1) + '%) · song-to-song similarity Spearman ρ ' + CMP.similarity_spearman.toFixed(2) +
+        ' · ' + fmt(CMP.songs) + ' songs';
+      var cx = CMP.clap_clusters.map(function (c, n) { return 'CLAP ' + (n + 1) + '<br>' + c.prompts.slice(0, 2).join('<br>'); });
+      var cy = CMP.rows.map(function (n, r) { return n + ' (' + CMP.row_sizes[r] + ')'; });
+      var ann = [];
+      CMP.matrix.forEach(function (row, r) {
+        row.forEach(function (v, c) {
+          if (v >= 0.05) ann.push({ x: c, y: r, xref: 'x', yref: 'y', text: pc(v), showarrow: false,
+                                    font: { color: v > 0.6 ? GROUND : INK, size: narrow ? 10 : 12 } });
+        });
+      });
+      Plotly.newPlot(ready('clap-matrix'), [{
+        type: 'heatmap', z: CMP.matrix, x: cx.map(function (l, n) { return n; }), y: cy.map(function (l, n) { return n; }),
+        zmin: 0, zmax: 1, showscale: false, xgap: 2, ygap: 2,
+        colorscale: [[0, '#16191C'], [0.25, '#0D2F47'], [0.5, '#1D6596'], [0.75, '#7DB8E4'], [1, '#EEF3F7']],
+        customdata: CMP.matrix.map(function (row, r) { return row.map(function (v, c) { return [CMP.rows[r], 'CLAP ' + (c + 1) + ' (' + CMP.clap_clusters[c].prompts.join(', ') + ')']; }); }),
+        hovertemplate: '%{customdata[0]} → %{customdata[1]}<br>%{z:.0%} of its songs<extra></extra>'
+      }], base({ margin: { l: narrow ? 150 : 210, r: 12, t: 12, b: narrow ? 70 : 64 }, annotations: ann,
+                 xaxis: axis('', { tickvals: cx.map(function (l, n) { return n; }), ticktext: cx, tickfont: { color: LABEL, size: narrow ? 9 : 11 }, showgrid: false, zeroline: false }),
+                 yaxis: axis('', { tickvals: cy.map(function (l, n) { return n; }), ticktext: cy, autorange: 'reversed', tickfont: { color: INK, size: narrow ? 10 : 12 }, showgrid: false, zeroline: false }) }), CONFIG);
+    }
+
     function showClusterOnGalaxy(ci) {
       galMode = 'cluster';
       document.querySelectorAll('[data-color]').forEach(function (o) { o.setAttribute('aria-pressed', String(o.dataset.color === 'cluster')); });
