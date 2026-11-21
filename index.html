@@ -78,6 +78,8 @@
   .controls .label { font: 12px var(--mono); color: var(--label); margin-right: 4px; }
   .pill { font: 13px var(--body); color: var(--label); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
   .pill:hover { color: var(--ink); }
+  .explorer select { font: 14px var(--body); color: var(--ink); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 8px; padding: 5px 8px; }
+  .explorer .label { margin-left: 6px; }
   .pill[aria-pressed="true"] { color: var(--ground); background: var(--ink); border-color: var(--ink); }
 
   /* Song finder */
@@ -140,13 +142,14 @@
   <ol class="wrap">
     <li><a href="#sound"><i>A1</i>Sound</a></li>
     <li><a href="#feeling"><i>A2</i>Feeling</a></li>
-    <li><a href="#mood"><i>A3</i>Mood</a></li>
-    <li><a href="#harmony"><i>A4</i>Harmony</a></li>
-    <li><a href="#rhythm"><i>B1</i>Rhythm</a></li>
-    <li><a href="#instruments"><i>B2</i>Instruments</a></li>
-    <li><a href="#time"><i>B3</i>Time</a></li>
-    <li><a href="#origins"><i>B4</i>Origins</a></li>
-    <li><a href="#signal"><i>B5</i>One song</a></li>
+    <li><a href="#explore"><i>A3</i>Explore</a></li>
+    <li><a href="#mood"><i>A4</i>Mood</a></li>
+    <li><a href="#harmony"><i>B1</i>Harmony</a></li>
+    <li><a href="#rhythm"><i>B2</i>Rhythm</a></li>
+    <li><a href="#instruments"><i>B3</i>Instruments</a></li>
+    <li><a href="#time"><i>B4</i>Time</a></li>
+    <li><a href="#origins"><i>B5</i>Origins</a></li>
+    <li><a href="#signal"><i>B6</i>One song</a></li>
   </ol>
 </nav>
 
@@ -177,6 +180,8 @@
       <button class="pill" data-color="danceable" aria-pressed="false">Danceability</button>
     </div>
     <div class="chart tall loading" id="galaxy">Loading 3,533 songs…</div>
+    <p class="hint">Legend: click a genre to hide it, double-click to show only that genre, double-click again to bring all back.
+      Drag a box to zoom in, double-click an empty spot to zoom back out.</p>
     <p class="method">Discogs-EffNet embeddings → UMAP (cosine, 20 neighbours). "Sounds like" uses the full 1,280-number embeddings, not the flat map.</p>
   </section>
 
@@ -193,9 +198,27 @@
     <p class="method">Essentia emoMusic (MusiCNN) · rings = my top-5 songs in any Spotify period · ★ = library average</p>
   </section>
 
+  <section class="track" id="explore">
+    <div class="track-head">
+      <div class="side"><b>A3</b> · Explore</div>
+      <h2>Sound explorer</h2>
+      <p>Pick any two (or three) features and see how my songs spread out. Each dot is a song, coloured by genre.
+        Switch to 3D to add a third axis, then drag to rotate.</p>
+      <p class="finding" id="explore-finding">Loading…</p>
+    </div>
+    <div class="controls explorer">
+      <label class="label" for="ex-x">X</label><select id="ex-x"></select>
+      <label class="label" for="ex-y">Y</label><select id="ex-y"></select>
+      <button class="pill" id="ex-3d" aria-pressed="false">3D</button>
+      <label class="label" for="ex-z" id="ex-z-label" hidden>Z</label><select id="ex-z" hidden></select>
+    </div>
+    <div class="chart tall loading" id="explorer">Loading…</div>
+    <p class="method">Tempo: Essentia RhythmExtractor2013 · energy and happiness: emoMusic, 1–9 scale · the other features: Essentia classifiers, % probability</p>
+  </section>
+
   <section class="track" id="mood">
     <div class="track-head">
-      <div class="side"><b>A3</b> · Mood</div>
+      <div class="side"><b>A4</b> · Mood</div>
       <h2>Then vs. now</h2>
       <p class="finding">Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
         songs dropped compared with the library as a whole.</p>
@@ -207,7 +230,7 @@
   <section class="track" id="harmony">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>A4</b> · Harmony</div>
+        <div class="side"><b>B1</b> · Harmony</div>
         <h2>Key wheel</h2>
         <p>The key of every song on the circle of fifths, where neighbouring keys sound related. Each slot pairs a
           major key with its relative minor, such as C major and A minor.</p>
@@ -221,7 +244,7 @@
 
   <section class="track" id="rhythm">
     <div class="track-head">
-      <div class="side"><b>B1</b> · Rhythm</div>
+      <div class="side"><b>B2</b> · Rhythm</div>
       <h2>Tempo by genre</h2>
       <p class="finding">Rock is my fastest genre, with a median around 120 BPM. Latin is the slowest, with a peak
         near 90 BPM, the typical reggaeton groove. Hip hop is spread across the whole range.</p>
@@ -233,7 +256,7 @@
 
   <section class="track" id="instruments">
     <div class="track-head">
-      <div class="side"><b>B2</b> · Instruments</div>
+      <div class="side"><b>B3</b> · Instruments</div>
       <h2>What's playing</h2>
       <p class="finding">Drums and bass lead, then guitars. My favourite songs carry more synthesizer and less piano and
         acoustic guitar than the library overall, which matches the move to electronic music.</p>
@@ -244,7 +267,7 @@
 
   <section class="track" id="time">
     <div class="track-head">
-      <div class="side"><b>B3</b> · Time</div>
+      <div class="side"><b>B4</b> · Time</div>
       <h2>My music through time</h2>
       <p class="finding">Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
         month was October 2023.</p>
@@ -256,7 +279,7 @@
 
   <section class="track" id="origins">
     <div class="track-head">
-      <div class="side"><b>B4</b> · Origins</div>
+      <div class="side"><b>B5</b> · Origins</div>
       <h2>Where my music comes from</h2>
       <p>Each country is coloured by how many of my songs come from artists born or formed there. Hover a country to
         see who they are.</p>
@@ -264,12 +287,13 @@
       <p class="method" id="origins-method">MusicBrainz (matched through each song's ISRC code), with Last.fm tags as a fallback</p>
     </div>
     <div class="chart tall loading" id="worldmap">Loading…</div>
+    <div class="chart mid loading" id="countries">Loading…</div>
   </section>
 
   <section class="track" id="signal">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>B5</b> · One song up close</div>
+        <div class="side"><b>B6</b> · One song up close</div>
         <h2>Song card: Marianne</h2>
         <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
           the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
@@ -368,8 +392,13 @@
 
     // ---------- A1 galaxy ----------
     var gal = ready('galaxy');
-    var galAxes = { xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } };
-    var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'pan',
+    // Fixed frame around all songs, so hiding genres or picking a song never re-zooms the map
+    var pad = function (arr) {
+      var v = arr.filter(function (x) { return x != null; }), lo = Math.min.apply(null, v), hi = Math.max.apply(null, v), p = (hi - lo) * 0.04;
+      return [lo - p, hi + p];
+    };
+    var galAxes = { xaxis: { visible: false, range: pad(S.x) }, yaxis: { visible: false, range: pad(S.y), scaleanchor: 'x' } };
+    var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'zoom',
       legend: { font: { color: INK }, bgcolor: 'rgba(17,19,21,.75)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
     var highlight = function (xs, ys) {
       return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
@@ -403,9 +432,16 @@
     }
     var selected = null, galMode = 'genre';
     function drawGalaxy() {
+      // Keep the genres the viewer hid or isolated in the legend
+      var hidden = {};
+      (gal.data || []).forEach(function (t) { if (t.visible === 'legendonly') hidden[t.name] = true; });
       var traces = galaxyTraces(galMode);
+      traces.forEach(function (t) { if (hidden[t.name]) t.visible = 'legendonly'; });
       traces.push(highlight(selected == null ? [] : [S.x[selected]], selected == null ? [] : [S.y[selected]]));
       Plotly.react(gal, traces, galLayout, CONFIG);
+    }
+    function moveGalaxyRing() {  // only the ring moves: legend filters and zoom stay as they are
+      Plotly.restyle(gal, { x: [[S.x[selected]]], y: [[S.y[selected]]] }, [gal.data.length - 1]);
     }
     drawGalaxy();
     document.querySelectorAll('[data-color]').forEach(function (b) {
@@ -449,7 +485,72 @@
       dragmode: 'zoom'
     }), CONFIG);
 
-    // ---------- A3 moods ----------
+    // ---------- A3 sound explorer ----------
+    var VARS = [['bpm', 'Tempo (BPM)'], ['a', 'Energy (1–9)'], ['v', 'Happiness (1–9)'], ['danceable', 'Danceable (%)'],
+                ['acoustic', 'Acoustic (%)'], ['electronic', 'Electronic (%)'], ['relaxed', 'Relaxed (%)'], ['sad', 'Sad (%)'],
+                ['party', 'Party (%)'], ['aggressive', 'Aggressive (%)'], ['year', 'Release year']];
+    var VAR_LABEL = {}; VARS.forEach(function (v) { VAR_LABEL[v[0]] = v[1]; });
+    var PCT = { danceable: 1, acoustic: 1, electronic: 1, relaxed: 1, sad: 1, party: 1, aggressive: 1 };
+    var val = function (k, i) { var x = S[k][i]; return x == null ? null : (PCT[k] ? Math.round(x * 1000) / 10 : x); };
+    var exEl = ready('explorer'), exX = document.getElementById('ex-x'), exY = document.getElementById('ex-y'), exZ = document.getElementById('ex-z');
+    var ex3d = document.getElementById('ex-3d');
+    [exX, exY, exZ].forEach(function (sel, n) {
+      VARS.forEach(function (v) { var o = document.createElement('option'); o.value = v[0]; o.textContent = v[1]; sel.appendChild(o); });
+      sel.value = ['bpm', 'a', 'danceable'][n];
+    });
+    function pearson(xs, ys) {
+      var n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+      for (var k = 0; k < xs.length; k++) {
+        if (xs[k] == null || ys[k] == null) continue;
+        n++; sx += xs[k]; sy += ys[k]; sxx += xs[k] * xs[k]; syy += ys[k] * ys[k]; sxy += xs[k] * ys[k];
+      }
+      var d = Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
+      return d ? (n * sxy - sx * sy) / d : 0;
+    }
+    function strength(r) {
+      var a = Math.abs(r), dir = r > 0 ? 'positive' : 'negative';
+      return a < 0.1 ? 'no real link' : a < 0.3 ? 'a weak ' + dir + ' link' : a < 0.6 ? 'a moderate ' + dir + ' link' : 'a strong ' + dir + ' link';
+    }
+    var short = function (k) { return VAR_LABEL[k].replace(/ \(.*\)/, ''); };
+    function drawExplorer() {
+      var x = exX.value, y = exY.value, z = exZ.value, three = ex3d.getAttribute('aria-pressed') === 'true';
+      var hidden = {};
+      (exEl.data || []).forEach(function (t) { if (t.visible === 'legendonly') hidden[t.name] = true; });
+      var traces = G.map(function (g, gi) {
+        var idx = byGenre[gi].filter(function (i) { return val(x, i) != null && val(y, i) != null && (!three || val(z, i) != null); });
+        var t = { type: three ? 'scatter3d' : 'scattergl', mode: 'markers', name: g, customdata: idx, text: pick(hover, idx),
+                  x: idx.map(function (i) { return val(x, i); }), y: idx.map(function (i) { return val(y, i); }),
+                  hovertemplate: '%{text}<br>' + VAR_LABEL[x] + ': %{x}<br>' + VAR_LABEL[y] + ': %{y}' + (three ? '<br>' + VAR_LABEL[z] + ': %{z}' : '') + '<extra></extra>',
+                  marker: { size: three ? 3 : 6, color: color(gi), opacity: three ? 0.85 : 0.75, line: { width: three ? 0 : 0.4, color: GROUND } } };
+        if (three) t.z = idx.map(function (i) { return val(z, i); });
+        if (hidden[g]) t.visible = 'legendonly';
+        return t;
+      }).reverse();
+      var leg = { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', traceorder: 'reversed',
+                  orientation: narrow ? 'h' : 'v', y: narrow ? -0.2 : 1 };
+      var ax3 = function (k) { return axis(VAR_LABEL[k], { backgroundcolor: 'rgba(0,0,0,0)', showbackground: false }); };
+      var layout = three
+        ? base({ margin: { l: 0, r: 0, t: 0, b: 0 }, legend: leg,
+                 scene: { bgcolor: 'rgba(0,0,0,0)', aspectmode: 'cube', xaxis: ax3(x), yaxis: ax3(y), zaxis: ax3(z) } })
+        : base({ xaxis: axis(VAR_LABEL[x]), yaxis: axis(VAR_LABEL[y]), legend: leg, dragmode: 'zoom' });
+      Plotly.react(exEl, traces, layout, CONFIG);
+      var xs = [], ys = [];
+      for (var i = 0; i < N; i++) { xs.push(val(x, i)); ys.push(val(y, i)); }
+      var r = pearson(xs, ys);
+      document.getElementById('explore-finding').textContent = x === y ? 'Pick two different features to compare them.'
+        : short(x) + ' vs. ' + short(y).toLowerCase() + ': correlation r = ' + r.toFixed(2) + ', ' + strength(r) +
+          ' across ' + fmt(N) + ' songs.';
+    }
+    [exX, exY, exZ].forEach(function (sel) { sel.addEventListener('change', drawExplorer); });
+    ex3d.addEventListener('click', function () {
+      var on = ex3d.getAttribute('aria-pressed') !== 'true';
+      ex3d.setAttribute('aria-pressed', String(on));
+      exZ.hidden = !on; document.getElementById('ex-z-label').hidden = !on;
+      drawExplorer();
+    });
+    drawExplorer();
+
+    // ---------- A4 moods ----------
     var md = D.moods, order = md.names.map(function (n, i) { return i; }).sort(function (x, y) { return md.library[x] - md.library[y]; });
     Plotly.newPlot(ready('moods'), [
       { type: 'bar', orientation: 'h', name: 'Your top songs, last 4 weeks (' + md.n_recent + ')', y: order.map(function (i) { return MOOD_NAMES[md.names[i]]; }),
@@ -567,6 +668,15 @@
       }], base({ margin: { l: 0, r: 0, t: 0, b: 0 }, dragmode: 'pan',
         geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#1E2327',
                showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' }, lataxis: { range: [-58, 85] } } }), CONFIG);
+      var top10 = O.name.slice(0, 10).map(function (n, k) { return k; }).reverse();
+      Plotly.newPlot(ready('countries'), [{
+        type: 'bar', orientation: 'h', y: top10.map(function (k) { return O.name[k]; }), x: top10.map(function (k) { return O.songs[k]; }),
+        text: top10.map(function (k) { return O.songs[k] + ' · ' + share(k); }), textposition: 'outside', cliponaxis: false,
+        textfont: { color: INK }, marker: { color: '#3987e5' }, customdata: top10.map(function (k) { return mapHover[k]; }),
+        hovertemplate: '%{customdata}<extra></extra>'
+      }], base({ margin: { l: 120, r: 80, t: 36, b: 40 }, bargap: 0.3,
+                 title: { text: 'Top 10 countries by number of songs', x: 0, xref: 'paper', font: { color: INK, size: 14 } },
+                 xaxis: axis('songs'), yaxis: axis('', { tickfont: { color: INK, size: 13 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
       var top3 = [0, 1, 2].filter(function (k) { return k < O.name.length; });
       document.getElementById('origins-finding').textContent =
         top3.map(function (k) { return O.name[k] + ' (' + share(k) + ')'; }).join(', ') + ' make up most of my library, out of ' +
@@ -575,6 +685,7 @@
         fmt(O.checked) + ' artists checked so far (' + fmt(D.summary.artists_total) + ' in total)';
     } else {
       mapEl.textContent = 'Artist origins are still being collected.';
+      ready('countries').textContent = '';
       document.getElementById('origins-finding').textContent = 'Coming soon.';
     }
 
@@ -588,7 +699,7 @@
 
     function choose(i) {
       selected = i;
-      drawGalaxy();
+      moveGalaxyRing();
       Plotly.restyle(emo, { x: [[S.v[i]]], y: [[S.a[i]]] }, [emoSel]);
       input.value = labels[i];
       var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
@@ -621,7 +732,7 @@
       }
       if (i != null) choose(i);
     });
-    [gal, emo].forEach(function (el) {
+    [gal, emo, exEl].forEach(function (el) {
       el.on('plotly_click', function (ev) {
         var p = ev.points && ev.points[0];
         if (p && p.customdata != null) { choose(p.customdata); document.getElementById('find').scrollIntoView({ block: 'nearest' }); }
