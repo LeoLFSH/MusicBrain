@@ -9,17 +9,17 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   /* Layout: liner notes for a record. A real spectrogram as cover art, a sticky "tracklist",
-     then one side per finding with a live chart. Colours: dark version of my portfolio palette. */
+     then one side per finding with a live chart. Colours: black ground with my portfolio blues. */
   :root {
     color-scheme: dark;
-    /* Dark version of the portfolio palette (Navy #0B2D40, Blue #1D6596, Ice #EEF3F7, Rule #C9D6E0) */
-    --ground: #0B2D40;      /* Navy: page background */
-    --sleeve: #0F3750;      /* raised panels, a step lighter than Navy */
-    --groove: #22506B;      /* divider lines */
+    /* Black ground with the portfolio blues (Blue #1D6596, Ice #EEF3F7, Rule #C9D6E0) as accents */
+    --ground: #111315;      /* near-black page background */
+    --sleeve: #1A1D20;      /* raised panels */
+    --groove: #2C3136;      /* divider lines */
     --ink: #EEF3F7;         /* Ice: headlines and big numbers */
     --body-ink: #C9D6E0;    /* Rule line colour, used as body text on dark */
-    --label: #93AABB;       /* muted grey-blue, lightened for dark */
-    --accent: #7DB8E4;      /* Blue, lightened so small labels and links read on Navy */
+    --label: #98A6B1;       /* muted grey-blue, lightened for dark */
+    --accent: #7DB8E4;      /* Blue, lightened so small labels and links read on black */
     --brand: #1D6596;       /* Blue as-is, for fills and bars */
     --display: "Unbounded", "Arial Black", system-ui, sans-serif;
     --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -318,7 +318,7 @@
   function base(extra) {
     var l = { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: FONT,
               margin: { l: 56, r: 16, t: 16, b: 48 }, hovermode: 'closest',
-              hoverlabel: { bgcolor: '#0F3750', bordercolor: GROOVE, font: { color: INK, family: FONT.family, size: 13 } },
+              hoverlabel: { bgcolor: '#1A1D20', bordercolor: GROOVE, font: { color: INK, family: FONT.family, size: 13 } },
               legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant' } };
     for (var k in extra) l[k] = extra[k];
     return l;
@@ -370,7 +370,7 @@
     var gal = ready('galaxy');
     var galAxes = { xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } };
     var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'pan',
-      legend: { font: { color: INK }, bgcolor: 'rgba(11,45,64,.75)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
+      legend: { font: { color: INK }, bgcolor: 'rgba(17,19,21,.75)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
     var highlight = function (xs, ys) {
       return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
                marker: { size: 18, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2.5 } } };
@@ -565,7 +565,7 @@
         colorbar: { title: { text: 'songs', font: { color: LABEL } }, tickvals: ticks.map(Math.sqrt), ticktext: ticks.map(String),
                     tickfont: { color: LABEL }, thickness: 10, len: 0.55, outlinewidth: 0 }
       }], base({ margin: { l: 0, r: 0, t: 0, b: 0 }, dragmode: 'pan',
-        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#0F3449',
+        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#1E2327',
                showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' }, lataxis: { range: [-58, 85] } } }), CONFIG);
       var top3 = [0, 1, 2].filter(function (k) { return k < O.name.length; });
       document.getElementById('origins-finding').textContent =
