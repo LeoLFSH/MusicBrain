@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MusicBrain · What my music sounds like</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A personal machine-learning project: 3,751 Spotify songs analysed by sound, mood, key and tempo.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: liner notes for a record. A real spectrogram as cover art, a sticky "tracklist",
+     then one side per finding with a live chart. Dark on purpose: the charts live on the same ground. */
+  :root {
+    color-scheme: dark;
+    --ground: #141413;
+    --sleeve: #1C1B19;
+    --groove: #2E2D2B;
+    --ink: #F0EEE6;
+    --body-ink: #D9D7CF;
+    --label: #A8A69D;
+    --magma: #F08A5D;
+    --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.65 var(--body); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  img { max-width: 100%; height: auto; display: block; }
+  a { color: var(--magma); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--magma); outline-offset: 2px; }
+
+  .cover { position: relative; border-bottom: 1px solid var(--groove); }
+  .cover .band { height: clamp(110px, 21vw, 220px); background: url(img/hero.webp) center / cover; }
+  .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, var(--ground) 100%); }
+  .cover .credit { position: absolute; z-index: 1; right: max(16px, env(safe-area-inset-right, 0px)); top: 10px; font: 12px var(--mono); color: var(--ink); opacity: .8; }
+  header.intro { padding-block: 8px 36px; display: grid; gap: 16px; }
+  .kicker { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--magma); }
+  h1 { font: 700 clamp(32px, 6vw, 58px)/1.05 var(--display); margin: 0; text-wrap: balance; }
+  .lead { font-size: 18px; max-width: 64ch; margin: 0; }
+  .lead + p { color: var(--label); max-width: 64ch; margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--groove); border: 1px solid var(--groove); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+  .stat { background: var(--ground); padding: 14px 18px; display: grid; gap: 2px; }
+  .stat b { font: 500 28px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 13px; color: var(--label); }
+
+  nav.tracklist { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(6px); border-block: 1px solid var(--groove); }
+  nav.tracklist ol { list-style: none; margin: 0 auto; padding-block: 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  nav.tracklist a { display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; text-decoration: none; color: var(--label); font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; }
+  nav.tracklist a i { font: 500 11px var(--mono); font-style: normal; color: var(--magma); }
+  nav.tracklist a:hover, nav.tracklist a.on { color: var(--ink); border-color: var(--groove); background: var(--sleeve); }
+
+  section.track { padding-block: 56px 8px; scroll-margin-top: 64px; display: grid; gap: 20px; }
+  .track-head { display: grid; gap: 10px; max-width: 70ch; min-width: 0; }
+  .side { font: 500 12px/1 var(--mono); letter-spacing: .12em; color: var(--label); text-transform: uppercase; }
+  .side b { color: var(--magma); font-weight: 500; }
+  h2 { font: 700 clamp(22px, 3.2vw, 30px)/1.2 var(--display); margin: 0; text-wrap: balance; }
+  .track p { margin: 0; color: var(--body-ink); }
+  .finding { border-left: 2px solid var(--magma); padding-left: 14px; color: var(--ink) !important; }
+  .method { font: 13px/1.55 var(--mono); color: var(--label) !important; }
+  .hint { font: 12px var(--mono); color: var(--label); }
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px; align-items: center; }
+  @media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
+  .chart { width: 100%; min-width: 0; border: 1px solid var(--groove); border-radius: 10px; background: var(--ground); }
+  .chart.tall { height: clamp(420px, 62vw, 640px); }
+  .chart.mid { height: clamp(360px, 45vw, 480px); }
+  .chart.short { height: 300px; }
+  .loading { display: grid; place-items: center; color: var(--label); font: 13px var(--mono); }
+  figure { margin: 0; }
+  figure img { border-radius: 10px; border: 1px solid var(--groove); width: 100%; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .controls .label { font: 12px var(--mono); color: var(--label); margin-right: 4px; }
+  .pill { font: 13px var(--body); color: var(--label); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .pill:hover { color: var(--ink); }
+  .pill[aria-pressed="true"] { color: var(--ground); background: var(--ink); border-color: var(--ink); }
+
+  /* Song finder */
+  .finder { display: grid; gap: 14px; background: var(--sleeve); border: 1px solid var(--groove); border-radius: 12px; padding: 18px; }
+  .finder label { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--magma); }
+  .finder input { width: 100%; font: 16px var(--body); color: var(--ink); background: var(--ground); border: 1px solid var(--groove); border-radius: 8px; padding: 10px 12px; }
+  .song { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 760px) { .song { grid-template-columns: 1fr; } }
+  .song h3 { font: 600 20px/1.3 var(--body); margin: 0; }
+  .song .by { color: var(--label); }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .fact { font: 12px var(--mono); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--groove); color: var(--body-ink); }
+  .meters { display: grid; gap: 5px; }
+  .meter { display: grid; grid-template-columns: 82px minmax(0, 1fr) 36px; gap: 8px; align-items: center; font-size: 13px; color: var(--label); }
+  .meter .bar { height: 6px; border-radius: 3px; background: var(--groove); overflow: hidden; }
+  .meter .bar i { display: block; height: 100%; background: var(--magma); border-radius: 3px; }
+  .meter b { font: 400 12px var(--mono); font-variant-numeric: tabular-nums; color: var(--body-ink); text-align: right; }
+  .alike { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .alike button { all: unset; cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; padding: 6px 8px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+  .alike button:hover, .alike button:focus-visible { background: var(--ground); outline: 1px solid var(--groove); }
+  .alike i { font: 12px var(--mono); font-style: normal; color: var(--magma); }
+  .alike span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alike small { color: var(--label); }
+
+  .next { margin-top: 56px; padding-block: 40px; border-top: 1px solid var(--groove); display: grid; gap: 18px; }
+  .next ol { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .next li { background: var(--sleeve); border: 1px solid var(--groove); border-radius: 10px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .next li b { font: 600 15px var(--body); }
+  .next li span { font-size: 14px; color: var(--label); }
+  footer { border-top: 1px solid var(--groove); padding-block: 24px 48px; color: var(--label); font-size: 13px; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="band" role="img" aria-label="Mel spectrogram of the song Marianne by Fontaines D.C."></div>
+  <span class="credit">mel spectrogram · Fontaines D.C. – Marianne · 0–30 s</span>
+</div>
+
+<div class="wrap">
+  <header class="intro">
+    <div class="kicker">MusicBrain · personal machine-learning project</div>
+    <h1>What my music sounds like</h1>
+    <p class="lead">I mapped my whole Spotify library by how it sounds, how it feels and where it comes from. Each song's
+      30-second preview went through machine-learning audio models, then got combined with data from Spotify,
+      Last.fm, Discogs and MusicBrainz.</p>
+    <p>The goal is a recommender that finds music beyond "fans also like": K-Means taste clusters, a small neural
+      network, and proper validation. Every chart below is live: hover a dot to see the song, click a genre to hide it.</p>
+    <div class="stats">
+      <div class="stat"><b id="st-songs">3,751</b><span>songs in the library</span></div>
+      <div class="stat"><b id="st-artists">1,862</b><span>artists</span></div>
+      <div class="stat"><b id="st-analysed">3,533</b><span>songs analysed from audio</span></div>
+      <div class="stat"><b id="st-bpm">115</b><span>median tempo, BPM</span></div>
+      <div class="stat"><b id="st-minor">39%</b><span>of songs in a minor key</span></div>
+    </div>
+  </header>
+</div>
+
+<nav class="tracklist" aria-label="Sections">
+  <ol class="wrap">
+    <li><a href="#sound"><i>A1</i>Sound</a></li>
+    <li><a href="#feeling"><i>A2</i>Feeling</a></li>
+    <li><a href="#mood"><i>A3</i>Mood</a></li>
+    <li><a href="#harmony"><i>A4</i>Harmony</a></li>
+    <li><a href="#rhythm"><i>B1</i>Rhythm</a></li>
+    <li><a href="#instruments"><i>B2</i>Instruments</a></li>
+    <li><a href="#time"><i>B3</i>Time</a></li>
+    <li><a href="#signal"><i>B4</i>One song</a></li>
+  </ol>
+</nav>
+
+<main class="wrap">
+  <section class="track" id="sound">
+    <div class="track-head">
+      <div class="side"><b>A1</b> · Sound</div>
+      <h2>Taste galaxy</h2>
+      <p>Each song becomes 1,280 numbers that describe its sound. UMAP squeezes them onto a flat map where songs that
+        sound alike end up as neighbours. The axes have no fixed meaning; only the distances do.</p>
+      <p class="finding">Nobody told the model about genres, yet it found its own directions: left to right goes from
+        acoustic to electronic, top to bottom from guitars to beats. Latin music forms its own islands, and Funk/Soul
+        splits into classic soul near rock and modern R&amp;B near hip hop.</p>
+    </div>
+    <div class="finder">
+      <label for="find">Find a song</label>
+      <input id="find" list="songlist" placeholder="Type a song or artist, e.g. Marianne" autocomplete="off">
+      <datalist id="songlist"></datalist>
+      <div class="hint" id="find-hint">Or click any dot on the galaxy or the emotion map.</div>
+      <div class="song" id="song" hidden></div>
+    </div>
+    <div class="controls" role="group" aria-label="Colour the galaxy by">
+      <span class="label">Colour by</span>
+      <button class="pill" data-color="genre" aria-pressed="true">Genre</button>
+      <button class="pill" data-color="v" aria-pressed="false">Happiness</button>
+      <button class="pill" data-color="a" aria-pressed="false">Energy</button>
+      <button class="pill" data-color="bpm" aria-pressed="false">Tempo</button>
+      <button class="pill" data-color="danceable" aria-pressed="false">Danceability</button>
+    </div>
+    <div class="chart tall loading" id="galaxy">Loading 3,533 songs…</div>
+    <p class="method">Discogs-EffNet embeddings → UMAP (cosine, 20 neighbours). "Sounds like" uses the full 1,280-number embeddings, not the flat map.</p>
+  </section>
+
+  <section class="track" id="feeling">
+    <div class="track-head">
+      <div class="side"><b>A2</b> · Feeling</div>
+      <h2>Emotion map</h2>
+      <p>Every song placed by valence (sad → happy) and arousal (calm → intense) on a 1–9 scale.</p>
+      <p class="finding">My library forms a diagonal band: calm songs lean melancholic, intense songs lean happy.
+        My average lands almost exactly in the middle. The tense corner is mostly hip hop; the sad, tired corner is
+        folk and acoustic.</p>
+    </div>
+    <div class="chart tall loading" id="emotion">Loading…</div>
+    <p class="method">Essentia emoMusic (MusiCNN) · rings = my top-5 songs in any Spotify period · ★ = library average</p>
+  </section>
+
+  <section class="track" id="mood">
+    <div class="track-head">
+      <div class="side"><b>A3</b> · Mood</div>
+      <h2>Then vs. now</h2>
+      <p class="finding">Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
+        songs dropped compared with the library as a whole.</p>
+    </div>
+    <div class="chart mid loading" id="moods">Loading…</div>
+    <p class="method">Essentia mood classifiers · average probability per song · recent = my top 50 of the last four weeks</p>
+  </section>
+
+  <section class="track" id="harmony">
+    <div class="split">
+      <div class="track-head">
+        <div class="side"><b>A4</b> · Harmony</div>
+        <h2>Key wheel</h2>
+        <p>The key of every song on the circle of fifths, where neighbouring keys sound related. Each slot pairs a
+          major key with its relative minor, such as C major and A minor.</p>
+        <p class="finding">C major and A minor lead, and my music leans to the guitar-friendly sharp side
+          (G, D, A, E). Flat keys like E♭, A♭ and D♭ are rare.</p>
+        <p class="method">Essentia KeyExtractor</p>
+      </div>
+      <div class="chart mid loading" id="keys">Loading…</div>
+    </div>
+  </section>
+
+  <section class="track" id="rhythm">
+    <div class="track-head">
+      <div class="side"><b>B1</b> · Rhythm</div>
+      <h2>Tempo by genre</h2>
+      <p class="finding">Rock is my fastest genre, with a median around 120 BPM. Latin is the slowest, with a peak
+        near 90 BPM, the typical reggaeton groove. Hip hop is spread across the whole range.</p>
+    </div>
+    <div class="controls" id="tempo-genres" role="group" aria-label="Genre"></div>
+    <div class="chart mid loading" id="tempo">Loading…</div>
+    <p class="method">Essentia RhythmExtractor2013 · grey = whole library · detectors sometimes report half or double the felt tempo</p>
+  </section>
+
+  <section class="track" id="instruments">
+    <div class="track-head">
+      <div class="side"><b>B2</b> · Instruments</div>
+      <h2>What's playing</h2>
+      <p class="finding">Drums and bass lead, then guitars. My favourite songs carry more synthesizer and less piano and
+        acoustic guitar than the library overall, which matches the move to electronic music.</p>
+    </div>
+    <div class="chart mid loading" id="instr">Loading…</div>
+    <p class="method">MTG-Jamendo instrument model, 40 instruments · favourites = top 50 in any Spotify period</p>
+  </section>
+
+  <section class="track" id="time">
+    <div class="track-head">
+      <div class="side"><b>B3</b> · Time</div>
+      <h2>My music through time</h2>
+      <p class="finding">Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
+        month was October 2023.</p>
+    </div>
+    <div class="chart short loading" id="years">Loading…</div>
+    <div class="chart short loading" id="added">Loading…</div>
+    <p class="method">Spotify release dates and Liked Songs timestamps</p>
+  </section>
+
+  <section class="track" id="signal">
+    <div class="split">
+      <div class="track-head">
+        <div class="side"><b>B4</b> · One song up close</div>
+        <h2>Song card: Marianne</h2>
+        <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
+          the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
+          the chromagram (which of the 12 notes are sounding) and loudness over time.</p>
+        <p class="finding">You can read the chord changes as yellow blocks in the chromagram, and the breakdown after
+          24 seconds in all four panels at once.</p>
+        <p class="method">librosa · 30 s Deezer preview</p>
+      </div>
+      <figure><img src="img/song_card.webp" alt="Song card with waveform, mel spectrogram, chromagram and loudness of Marianne" loading="lazy" width="1300" height="1170"></figure>
+    </div>
+  </section>
+
+  <section class="next" aria-labelledby="next-title">
+    <div class="side"><b>Side C</b> · Coming next</div>
+    <h2 id="next-title">Still in the studio</h2>
+    <ol>
+      <li><b>Taste clusters</b><span>K-Means on the sound embeddings and Last.fm tags, checked with silhouette and elbow plots.</span></li>
+      <li><b>A recommender with range</b><span>Broad candidates, a small neural taste model, and ranking that rewards novelty.</span></li>
+      <li><b>The people behind the music</b><span>Producers, engineers and session musicians from Discogs and MusicBrainz credits.</span></li>
+      <li><b>Where it comes from</b><span>A world map of artist origins.</span></li>
+      <li><b>Listening over time</b><span>Calendar heatmaps and forgotten favourites from my full Spotify history.</span></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Built with Python (spotipy, Essentia, librosa, CLAP, UMAP) and Plotly.</span>
+    <span>Data: Spotify, Last.fm, Discogs, MusicBrainz, Deezer previews. Essentia models are CC BY-NC-ND, used for non-commercial research.</span>
+    <span>Leonardo Fabián Sánchez · <span id="updated"></span></span>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+(function () {
+  var css = getComputedStyle(document.documentElement);
+  var T = function (n) { return css.getPropertyValue(n).trim(); };
+  var INK = T('--ink'), LABEL = T('--label'), GROOVE = T('--groove'), GROUND = T('--ground'), MAGMA = T('--magma');
+  // Fixed categorical order, validated for colour-blind separation on the dark ground; "Other" is grey
+  var SERIES = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#0ca30c', '#9085e9', '#e66767'];
+  var OTHER = '#6B6A65';
+  var FONT = { family: 'IBM Plex Sans, system-ui, sans-serif', color: LABEL, size: 12 };
+  var CONFIG = { displayModeBar: false, responsive: true };
+  var MOOD_NAMES = { danceable: 'Danceable', relaxed: 'Relaxed', happy: 'Happy', sad: 'Sad', acoustic: 'Acoustic',
+                     party: 'Party', electronic: 'Electronic', aggressive: 'Aggressive' };
+  var narrow = window.matchMedia('(max-width: 600px)').matches;
+
+  function base(extra) {
+    var l = { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: FONT,
+              margin: { l: 56, r: 16, t: 16, b: 48 }, hovermode: 'closest',
+              hoverlabel: { bgcolor: '#1F1E1D', bordercolor: GROOVE, font: { color: INK, family: FONT.family, size: 13 } },
+              legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant' } };
+    for (var k in extra) l[k] = extra[k];
+    return l;
+  }
+  function axis(title, extra) {
+    var a = { title: { text: title, font: { color: LABEL } }, gridcolor: GROOVE, zerolinecolor: GROOVE, linecolor: GROOVE,
+              tickfont: { color: LABEL } };
+    for (var k in extra) a[k] = extra[k];
+    return a;
+  }
+  function ready(id) { var el = document.getElementById(id); el.classList.remove('loading'); el.textContent = ''; return el; }
+  function fail(msg) {
+    document.querySelectorAll('.chart.loading').forEach(function (el) { el.textContent = msg; });
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); var m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  if (!window.Plotly) { fail('The charts could not load (Plotly is blocked or offline).'); return; }
+
+  fetch('data/library.json').then(function (r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }).then(build).catch(function () { fail('The chart data could not load. Open this page from its website, not as a local file.'); });
+
+  function build(D) {
+    var S = D.songs, N = S.name.length, G = D.genres;
+    var color = function (g) { return g < SERIES.length && G[g] !== 'Other' ? SERIES[g] : OTHER; };
+    var hover = S.name.map(function (n, i) {
+      return '<b>' + esc(n) + '</b><br>' + esc(S.artist[i]) + '<br><span style="color:' + LABEL + '">' + esc(G[S.g[i]]) +
+             (S.style[i] ? ' · ' + esc(S.style[i]) : '') + (S.bpm[i] ? ' · ' + S.bpm[i] + ' BPM' : '') + '</span>';
+    });
+    var byGenre = G.map(function () { return []; });
+    for (var i = 0; i < N; i++) byGenre[S.g[i]].push(i);
+    var pick = function (arr, idx) { return idx.map(function (i) { return arr[i]; }); };
+
+    // Stats
+    var bpms = S.bpm.filter(function (b) { return b; });
+    var minor = S.key.filter(function (k) { return /minor$/.test(k); }).length;
+    var keyed = S.key.filter(function (k) { return k; }).length;
+    document.getElementById('st-songs').textContent = fmt(D.summary.library);
+    document.getElementById('st-artists').textContent = fmt(D.summary.artists_total);
+    document.getElementById('st-analysed').textContent = fmt(N);
+    document.getElementById('st-bpm').textContent = Math.round(median(bpms));
+    document.getElementById('st-minor').textContent = Math.round(100 * minor / keyed) + '%';
+    document.getElementById('updated').textContent = 'data updated ' + D.updated;
+
+    // ---------- A1 galaxy ----------
+    var gal = ready('galaxy');
+    var galAxes = { xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } };
+    var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'pan',
+      legend: { font: { color: INK }, bgcolor: 'rgba(20,20,19,.7)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v' } }, galAxes));
+    var highlight = function (xs, ys) {
+      return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
+               marker: { size: 18, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2.5 } } };
+    };
+    var CONT = {
+      v: { title: 'Happiness', scale: [[0, '#3987e5'], [0.5, '#6B6A65'], [1, '#d95926']], mid: 5, label: 'sad → happy (valence)' },
+      a: { title: 'Energy', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'calm → intense (arousal)' },
+      bpm: { title: 'BPM', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'tempo', range: [70, 170] },
+      danceable: { title: 'Danceable', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'danceability' }
+    };
+    function galaxyTraces(mode) {
+      if (mode === 'genre') {
+        var t = G.map(function (g, gi) {
+          var idx = byGenre[gi];
+          return { type: 'scattergl', mode: 'markers', name: g + ' (' + idx.length + ')', x: pick(S.x, idx), y: pick(S.y, idx),
+                   text: pick(hover, idx), customdata: idx, hovertemplate: '%{text}<extra></extra>',
+                   marker: { size: narrow ? 5 : 6, color: color(gi), opacity: .85, line: { width: 0.5, color: GROUND } } };
+        }).reverse();
+        return t;
+      }
+      var c = CONT[mode], idx = [];
+      for (var i = 0; i < N; i++) if (S[mode][i] != null) idx.push(i);
+      var vals = pick(S[mode], idx);
+      return [{ type: 'scattergl', mode: 'markers', name: c.title, x: pick(S.x, idx), y: pick(S.y, idx), text: pick(hover, idx),
+                customdata: idx, hovertemplate: '%{text}<br>' + c.title + ': %{marker.color}<extra></extra>', showlegend: false,
+                marker: { size: narrow ? 5 : 6, color: vals, colorscale: c.scale, cmid: c.mid, cmin: c.range && c.range[0], cmax: c.range && c.range[1],
+                          line: { width: 0.5, color: GROUND },
+                          colorbar: { title: { text: c.label, side: 'right', font: { color: LABEL } }, tickfont: { color: LABEL },
+                                      thickness: 10, len: 0.6, outlinewidth: 0 } } }];
+    }
+    var selected = null, galMode = 'genre';
+    function drawGalaxy() {
+      var traces = galaxyTraces(galMode);
+      traces.push(highlight(selected == null ? [] : [S.x[selected]], selected == null ? [] : [S.y[selected]]));
+      Plotly.react(gal, traces, galLayout, CONFIG);
+    }
+    drawGalaxy();
+    document.querySelectorAll('[data-color]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        galMode = b.dataset.color;
+        document.querySelectorAll('[data-color]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+        drawGalaxy();
+      });
+    });
+
+    // ---------- A2 emotion map ----------
+    var emo = ready('emotion');
+    var vAll = S.v.filter(function (x) { return x != null; }), aAll = S.a.filter(function (x) { return x != null; });
+    var vMean = vAll.reduce(function (s, x) { return s + x; }, 0) / vAll.length;
+    var aMean = aAll.reduce(function (s, x) { return s + x; }, 0) / aAll.length;
+    var favIdx = []; for (i = 0; i < N; i++) if (S.rank[i] && S.rank[i] <= 5) favIdx.push(i);
+    var emoTraces = G.map(function (g, gi) {
+      var idx = byGenre[gi];
+      return { type: 'scattergl', mode: 'markers', name: g, x: pick(S.v, idx), y: pick(S.a, idx), text: pick(hover, idx), customdata: idx,
+               hovertemplate: '%{text}<br>valence %{x:.2f} · arousal %{y:.2f}<extra></extra>',
+               marker: { size: 6, color: color(gi), opacity: .75, line: { width: 0.4, color: GROUND } } };
+    }).reverse();
+    emoTraces.push({ type: 'scattergl', mode: 'markers', name: 'Top-5 favourites', x: pick(S.v, favIdx), y: pick(S.a, favIdx),
+                     text: pick(hover, favIdx), customdata: favIdx, hovertemplate: '%{text}<extra>favourite</extra>',
+                     marker: { size: 13, color: 'rgba(0,0,0,0)', line: { color: INK, width: 1.5 } } });
+    emoTraces.push({ type: 'scatter', mode: 'markers', name: 'Library average', x: [vMean], y: [aMean],
+                     hovertemplate: 'Library average<br>valence %{x:.2f} · arousal %{y:.2f}<extra></extra>',
+                     marker: { symbol: 'star', size: 20, color: '#FFD166', line: { color: GROUND, width: 1 } } });
+    var emoSel = emoTraces.length;
+    emoTraces.push(highlight([], []));
+    var q = function (x, y, t, xa, ya) { return { x: x, y: y, xref: 'x', yref: 'y', text: t, showarrow: false, xanchor: xa, yanchor: ya, font: { color: LABEL, size: 12 } }; };
+    var vMin = Math.min.apply(null, vAll) - .2, vMax = Math.max.apply(null, vAll) + .2;
+    var aMin = Math.min.apply(null, aAll) - .2, aMax = Math.max.apply(null, aAll) + .2;
+    Plotly.newPlot(emo, emoTraces, base({
+      xaxis: axis('Valence: sad → happy', { range: [vMin, vMax] }), yaxis: axis('Arousal: calm → intense', { range: [aMin, aMax] }),
+      shapes: [{ type: 'line', x0: 5, x1: 5, y0: aMin, y1: aMax, line: { color: GROOVE, width: 1.5 } },
+               { type: 'line', y0: 5, y1: 5, x0: vMin, x1: vMax, line: { color: GROOVE, width: 1.5 } }],
+      annotations: [q(vMax, aMax, 'Excited · happy', 'right', 'top'), q(vMin, aMax, 'Tense · angry', 'left', 'top'),
+                    q(vMin, aMin, 'Sad · tired', 'left', 'bottom'), q(vMax, aMin, 'Calm · content', 'right', 'bottom')],
+      legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', y: narrow ? -0.25 : 1 },
+      dragmode: 'zoom'
+    }), CONFIG);
+
+    // ---------- A3 moods ----------
+    var md = D.moods, order = md.names.map(function (n, i) { return i; }).sort(function (x, y) { return md.library[x] - md.library[y]; });
+    Plotly.newPlot(ready('moods'), [
+      { type: 'bar', orientation: 'h', name: 'Your top songs, last 4 weeks (' + md.n_recent + ')', y: order.map(function (i) { return MOOD_NAMES[md.names[i]]; }),
+        x: order.map(function (i) { return Math.round(md.recent[i] * 100); }), marker: { color: '#d95926' },
+        text: order.map(function (i) { return Math.round(md.recent[i] * 100) + '%'; }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+        hovertemplate: '%{y}: %{x}% (recent)<extra></extra>' },
+      { type: 'bar', orientation: 'h', name: 'Whole library (' + fmt(N) + ')', y: order.map(function (i) { return MOOD_NAMES[md.names[i]]; }),
+        x: order.map(function (i) { return Math.round(md.library[i] * 100); }), marker: { color: '#3987e5' },
+        text: order.map(function (i) { return Math.round(md.library[i] * 100) + '%'; }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+        hovertemplate: '%{y}: %{x}% (library)<extra></extra>' }
+    ], base({ barmode: 'group', bargap: 0.28, bargroupgap: 0.08, margin: { l: 96, r: 40, t: 8, b: 48 },
+              xaxis: axis('Average probability Essentia hears the mood (%)', { range: [0, 100] }),
+              yaxis: axis('', { tickfont: { color: INK, size: 13 }, gridcolor: 'rgba(0,0,0,0)' }),
+              legend: { orientation: 'h', y: -0.2, font: { color: INK }, traceorder: 'reversed' } }), CONFIG);
+
+    // ---------- A4 key wheel ----------
+    var FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'];
+    var ENH = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+    var NICE = { 'C#': 'D♭', 'G#': 'A♭', 'D#': 'E♭', 'A#': 'B♭', 'F#': 'F♯' };
+    var nice = function (k) { return NICE[k] || k; };
+    var maj = {}, mnr = {};
+    S.key.forEach(function (k) {
+      if (!k) return; var p = k.split(' '), root = ENH[p[0]] || p[0];
+      if (p[1] === 'major') maj[root] = (maj[root] || 0) + 1; else mnr[root] = (mnr[root] || 0) + 1;
+    });
+    var slot = FIFTHS.map(function (m, i) { return nice(m) + ' / ' + nice(FIFTHS[(i + 3) % 12]) + 'm'; });
+    Plotly.newPlot(ready('keys'), [
+      { type: 'barpolar', name: 'Major', theta: slot, r: FIFTHS.map(function (m) { return maj[m] || 0; }), marker: { color: '#3987e5', line: { color: GROUND, width: 2 } },
+        hovertemplate: '%{customdata} major: %{r} songs<extra></extra>', customdata: FIFTHS.map(nice), width: 13, offset: -14 },
+      { type: 'barpolar', name: 'Minor', theta: slot, r: FIFTHS.map(function (m, i) { return mnr[FIFTHS[(i + 3) % 12]] || 0; }), marker: { color: '#d95926', line: { color: GROUND, width: 2 } },
+        hovertemplate: '%{customdata} minor: %{r} songs<extra></extra>', customdata: FIFTHS.map(function (m, i) { return nice(FIFTHS[(i + 3) % 12]); }), width: 13, offset: 1 }
+    ], base({ margin: { l: 40, r: 40, t: 30, b: 30 },
+              polar: { bgcolor: 'rgba(0,0,0,0)', angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { color: INK, size: narrow ? 10 : 12 }, linecolor: GROOVE, gridcolor: GROOVE },
+                       radialaxis: { showticklabels: false, gridcolor: GROOVE, linecolor: 'rgba(0,0,0,0)' } },
+              legend: { orientation: 'h', y: -0.08, x: 0.5, xanchor: 'center', font: { color: INK } } }), CONFIG);
+
+    // ---------- B1 tempo ----------
+    var tempoEl = ready('tempo'), tempoPick = 0;
+    var bins = { start: 50, end: 210, size: 4 };
+    function drawTempo() {
+      var idx = byGenre[tempoPick].filter(function (i) { return S.bpm[i]; }), sel = pick(S.bpm, idx), med = median(sel);
+      Plotly.react(tempoEl, [
+        { type: 'histogram', x: bpms, xbins: bins, histnorm: 'percent', name: 'Whole library', marker: { color: GROOVE },
+          hovertemplate: '%{x} BPM: %{y:.1f}% of library<extra></extra>' },
+        { type: 'histogram', x: sel, xbins: bins, histnorm: 'percent', name: G[tempoPick] + ' (' + sel.length + ')', marker: { color: color(tempoPick), opacity: .9 },
+          hovertemplate: '%{x} BPM: %{y:.1f}% of ' + esc(G[tempoPick]) + '<extra></extra>' }
+      ], base({ barmode: 'overlay', bargap: 0.08, xaxis: axis('Tempo (BPM)', { range: [50, 210] }), yaxis: axis('% of songs'),
+                shapes: [{ type: 'line', x0: med, x1: med, yref: 'paper', y0: 0, y1: 1, line: { color: INK, width: 1.5, dash: 'dot' } }],
+                annotations: [{ x: med, yref: 'paper', y: 1, text: 'median ' + Math.round(med), showarrow: false, xanchor: 'left', xshift: 6, yanchor: 'top', font: { color: INK } }],
+                legend: { orientation: 'h', y: 1.12, font: { color: INK } } }), CONFIG);
+    }
+    var tg = document.getElementById('tempo-genres');
+    G.slice(0, 8).forEach(function (g, gi) {
+      if (g === 'Other') return;
+      var b = document.createElement('button'); b.className = 'pill'; b.textContent = g; b.setAttribute('aria-pressed', String(gi === 0));
+      b.addEventListener('click', function () {
+        tempoPick = gi; tg.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); drawTempo();
+      });
+      tg.appendChild(b);
+    });
+    drawTempo();
+
+    // ---------- B2 instruments ----------
+    var ins = D.instruments, inames = ins.names.map(function (n) {
+      return ({ acousticguitar: 'acoustic guitar', electricguitar: 'electric guitar', drummachine: 'drum machine', electricpiano: 'electric piano' })[n] || n;
+    }).reverse();
+    Plotly.newPlot(ready('instr'), [
+      { type: 'bar', orientation: 'h', name: 'Whole library', y: inames, x: ins.library.slice().reverse().map(function (v) { return v * 100; }),
+        marker: { color: '#3987e5' }, hovertemplate: '%{y}: %{x:.1f}% (library)<extra></extra>' },
+      { type: 'scatter', mode: 'markers', name: 'Favourites (' + ins.n_fav + ' songs)', y: inames, x: ins.favourites.slice().reverse().map(function (v) { return v * 100; }),
+        marker: { symbol: 'line-ns', size: 18, line: { color: INK, width: 3 } }, hovertemplate: '%{y}: %{x:.1f}% (favourites)<extra></extra>' }
+    ], base({ margin: { l: 120, r: 16, t: 8, b: 48 }, bargap: 0.3, xaxis: axis('Average probability Essentia hears it (%)'),
+              yaxis: axis('', { tickfont: { color: INK, size: 13 }, gridcolor: 'rgba(0,0,0,0)' }),
+              legend: { orientation: 'h', y: -0.18, font: { color: INK } } }), CONFIG);
+
+    // ---------- B3 time ----------
+    Plotly.newPlot(ready('years'), [{ type: 'bar', x: D.years.year, y: D.years.count, marker: { color: '#3987e5' },
+      hovertemplate: '%{x}: %{y} songs<extra></extra>' }],
+      base({ margin: { l: 48, r: 16, t: 36, b: 36 }, title: { text: 'Release year', x: 0, xref: 'paper', font: { color: INK, size: 14 } },
+             xaxis: axis(''), yaxis: axis('songs'), bargap: 0.15 }), CONFIG);
+    Plotly.newPlot(ready('added'), [{ type: 'bar', x: D.added.month, y: D.added.count, marker: { color: '#d95926' },
+      hovertemplate: '%{x|%B %Y}: %{y} songs added<extra></extra>' }],
+      base({ margin: { l: 48, r: 16, t: 36, b: 36 }, title: { text: 'Songs added to Liked Songs per month', x: 0, xref: 'paper', font: { color: INK, size: 14 } },
+             xaxis: axis('', { type: 'date' }), yaxis: axis('songs'), bargap: 0.15 }), CONFIG);
+
+    // ---------- Song finder ----------
+    var labels = S.name.map(function (n, i) { return n + ' — ' + S.artist[i]; });
+    var lookup = {}; labels.forEach(function (l, i) { lookup[l.toLowerCase()] = i; });
+    var dl = document.getElementById('songlist'), frag = document.createDocumentFragment();
+    labels.slice().sort().forEach(function (l) { var o = document.createElement('option'); o.value = l; frag.appendChild(o); });
+    dl.appendChild(frag);
+    var panel = document.getElementById('song'), input = document.getElementById('find');
+
+    function choose(i) {
+      selected = i;
+      drawGalaxy();
+      Plotly.restyle(emo, { x: [[S.v[i]]], y: [[S.a[i]]] }, [emoSel]);
+      input.value = labels[i];
+      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i]].filter(Boolean);
+      var meters = ['happy', 'sad', 'relaxed', 'danceable', 'acoustic', 'electronic'].map(function (m) {
+        var p = Math.round((S[m][i] || 0) * 100);
+        return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
+      }).join('');
+      var alike = D.neighbours[i].map(function (j, k) {
+        return '<li><button type="button" data-song="' + j + '"><i>' + (k + 1) + '</i><span>' + esc(S.name[j]) + ' <small>' + esc(S.artist[j]) + '</small></span></button></li>';
+      }).join('');
+      panel.innerHTML =
+        '<div><h3>' + esc(S.name[i]) + '</h3><div class="by">' + esc(S.artist[i]) + '</div>' +
+        '<div class="facts">' + facts.map(function (f) { return '<span class="fact">' + esc(f) + '</span>'; }).join('') + '</div>' +
+        '<div class="meters">' + meters + '</div>' +
+        '<p class="hint" style="margin-top:10px">Valence ' + S.v[i] + ' · arousal ' + S.a[i] + ' (1–9) · <a href="https://open.spotify.com/track/' + encodeURIComponent(S.id[i]) + '" target="_blank" rel="noopener">Open in Spotify</a></p></div>' +
+        '<div><div class="side" style="margin-bottom:8px">Sounds most like</div><ul class="alike">' + alike + '</ul>' +
+        '<p class="hint" style="margin-top:8px">Closest songs by audio alone, across 1,280 sound features.</p></div>';
+      panel.hidden = false;
+      document.getElementById('find-hint').hidden = true;
+    }
+    panel.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-song]'); if (b) choose(+b.dataset.song);
+    });
+    input.addEventListener('change', function () {
+      var i = lookup[input.value.trim().toLowerCase()];
+      if (i == null) {  // loose match: first song whose name or artist contains the text
+        var t = input.value.trim().toLowerCase(); if (!t) return;
+        for (var k = 0; k < N; k++) if (labels[k].toLowerCase().indexOf(t) >= 0) { i = k; break; }
+      }
+      if (i != null) choose(i);
+    });
+    [gal, emo].forEach(function (el) {
+      el.on('plotly_click', function (ev) {
+        var p = ev.points && ev.points[0];
+        if (p && p.customdata != null) { choose(p.customdata); document.getElementById('find').scrollIntoView({ block: 'nearest' }); }
+      });
+    });
+    var start = S.name.indexOf('Marianne');
+    if (start >= 0) choose(start);
+  }
+})();
+
+// Highlight the tracklist entry for the section in view
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.tracklist a'));
+  if (!('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('on'); });
+      var a = byId[e.target.id];
+      if (!a) return;
+      a.classList.add('on');
+      var ol = a.closest('ol');  // keep the active chip visible without scrolling the page itself
+      if (a.offsetLeft < ol.scrollLeft || a.offsetLeft + a.offsetWidth > ol.scrollLeft + ol.clientWidth) ol.scrollLeft = a.offsetLeft - 16;
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  document.querySelectorAll('section.track').forEach(function (s) { obs.observe(s); });
+})();
+</script>
+</body>
+</html>
