@@ -94,6 +94,8 @@
   .card .side { margin-top: 4px; }
   .card .show { justify-self: start; }
   .subhead { margin-top: 28px; }
+  .scrollx { overflow-x: auto; }
+  #vibe-pills .pill { font-size: 13px; }
   .subhead h3 { font: 700 clamp(18px, 2.4vw, 22px)/1.25 var(--display); margin: 0; text-wrap: balance; }
   .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
   @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
@@ -164,6 +166,7 @@
     <li><a href="#feeling"><i>A3</i>Feeling</a></li>
     <li><a href="#explore"><i>A4</i>Explore</a></li>
     <li><a href="#mood"><i>A5</i>Mood</a></li>
+    <li><a href="#listen"><i>A6</i>Search by sound</a></li>
     <li><a href="#harmony"><i>B1</i>Harmony</a></li>
     <li><a href="#rhythm"><i>B2</i>Rhythm</a></li>
     <li><a href="#instruments"><i>B3</i>Instruments</a></li>
@@ -282,6 +285,32 @@
     </div>
     <div class="chart mid loading" id="moods">Loading…</div>
     <p class="method">Essentia mood classifiers · average probability per song · recent = my top 50 of the last four weeks</p>
+  </section>
+
+  <section class="track" id="listen">
+    <div class="track-head">
+      <div class="side"><b>A6</b> · Search by sound</div>
+      <h2>Describe a sound, find it in my library</h2>
+      <p>CLAP was trained on audio paired with text, so a sentence and a song live in the same space: the closer they are,
+        the better the song fits the description. Pick a description to see my songs that sound most like it.</p>
+      <p class="finding">CLAP hears instruments and textures very well (orchestras, distorted guitars, accordions, choirs,
+        drum machines) but genres and vocal styles poorly: it scores "someone rapping" lower on my hip hop than on my jazz.
+        So these searches describe what something sounds like, not what genre it is.</p>
+    </div>
+    <div class="controls" id="vibe-pills" role="group" aria-label="Sound descriptions"></div>
+    <div class="pair">
+      <div class="finder"><div class="side" id="vibe-title">Best matches</div><ul class="alike" id="vibe-list"></ul></div>
+      <div class="chart tall loading" id="clap-map">Loading…</div>
+    </div>
+    <p class="method">CLAP (LAION clap-htsat-unfused) · cosine similarity between text and audio embeddings, corrected for
+      "hub" songs that sit close to every description · map: UMAP of the CLAP embeddings, so neighbours sound alike to CLAP</p>
+    <div class="track-head subhead">
+      <div class="side">What CLAP hears in each genre</div>
+      <h3>Instruments, voices, moods and production by genre</h3>
+      <p>Each cell is how much more (blue) or less (orange) than my average song CLAP hears that description in the genre,
+        in standard deviations.</p>
+    </div>
+    <div class="scrollx"><div class="chart loading" id="clap-profile" style="min-width:640px;height:900px">Loading…</div></div>
   </section>
 
   <section class="track" id="harmony">
@@ -815,6 +844,69 @@
     });
     drawExplorer();
     unlockButton('explorer', drawExplorer);
+
+    // ---------- A6 search by sound (CLAP) ----------
+    var CR = D.clap, listen = document.getElementById('listen');
+    if (!CR) {
+      listen.hidden = true;
+      var nl = document.querySelector('nav.tracklist a[href="#listen"]'); if (nl) nl.parentNode.hidden = true;
+    } else {
+      var mapEl2 = ready('clap-map'), vibePick = 0;
+      var clapIdx = []; for (i = 0; i < N; i++) if (S.cx[i] != null) clapIdx.push(i);
+      var clapByGenre = G.map(function () { return []; });
+      clapIdx.forEach(function (i) { clapByGenre[S.g[i]].push(i); });
+      function drawVibe() {
+        var v = CR.vibes[vibePick], top = v.songs.slice(0, 15);
+        document.getElementById('vibe-title').textContent = 'Best matches · “' + v.text + '”';
+        document.getElementById('vibe-list').innerHTML = top.map(function (j, n) {
+          return '<li><button type="button" data-song="' + j + '"><i>' + (n + 1) + '</i><span>' + esc(S.name[j]) + ' <small>' +
+                 esc(S.artist[j]) + ' · ' + (v.z[n] >= 0 ? '+' : '') + v.z[n].toFixed(1) + ' σ</small></span></button></li>';
+        }).join('');
+        var traces = G.map(function (g, gi) {
+          var idx = clapByGenre[gi];
+          return { type: 'scattergl', mode: 'markers', name: g, x: pick(S.cx, idx), y: pick(S.cy, idx), text: pick(hover, idx),
+                   customdata: idx, hovertemplate: '%{text}<extra></extra>', showlegend: false,
+                   marker: { size: 4, color: color(gi), opacity: 0.35 } };
+        });
+        var hit = v.songs.filter(function (j) { return S.cx[j] != null; });
+        traces.push({ type: 'scattergl', mode: 'markers', name: 'matches', x: pick(S.cx, hit), y: pick(S.cy, hit), text: pick(hover, hit),
+                      customdata: hit, hovertemplate: '%{text}<extra>match</extra>', showlegend: false,
+                      marker: { size: 11, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2 } } });
+        Plotly.react(mapEl2, traces, base({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: dragFor('clap-map', 'zoom'),
+          xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } }), configFor('clap-map'));
+      }
+      var vp = document.getElementById('vibe-pills');
+      CR.vibes.forEach(function (v, n) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.textContent = v.text;
+        b.setAttribute('aria-pressed', String(n === 0));
+        b.addEventListener('click', function () {
+          vibePick = n; vp.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); drawVibe();
+        });
+        vp.appendChild(b);
+      });
+      drawVibe();
+      unlockButton('clap-map', drawVibe);
+      document.getElementById('vibe-list').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-song]');
+        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+      });
+      mapEl2.on('plotly_click', function (ev) {
+        var p = ev.points && ev.points[0];
+        if (p && p.customdata != null) { choose(p.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+      });
+
+      var PR = CR.profile, groupName = { instrument: 'Instrument', vocals: 'Voice', mood: 'Mood', production: 'Production' };
+      var ylab = PR.prompts.map(function (pp, n) { return pp + ' · ' + groupName[PR.groups[n]]; });
+      var zT = PR.prompts.map(function (pp, n) { return PR.z.map(function (row) { return row[n]; }); });  // prompts x genres
+      Plotly.newPlot(ready('clap-profile'), [{
+        type: 'heatmap', z: zT, x: PR.genres.map(function (g, n) { return g + ' (' + PR.counts[n] + ')'; }), y: ylab,
+        zmin: -2, zmax: 2, xgap: 1, ygap: 1, colorscale: [[0, '#E2703F'], [0.5, '#1A1D20'], [1, '#4F9BE8']],
+        colorbar: { title: { text: 'σ vs my<br>average song', font: { color: LABEL } }, tickfont: { color: LABEL }, thickness: 10, len: 0.4, outlinewidth: 0 },
+        hovertemplate: '%{x}<br>%{y}: %{z:+.1f} σ<extra></extra>'
+      }], base({ margin: { l: 200, r: 16, t: 16, b: 110 },
+                 xaxis: axis('', { side: 'bottom', tickangle: -35, tickfont: { color: INK, size: 11 }, showgrid: false }),
+                 yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 11 }, showgrid: false }) }), CONFIG);
+    }
 
     // ---------- A4 moods ----------
     var md = D.moods, order = md.names.map(function (n, i) { return i; }).sort(function (x, y) { return md.library[x] - md.library[y]; });
