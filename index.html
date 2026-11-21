@@ -9,16 +9,18 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   /* Layout: liner notes for a record. A real spectrogram as cover art, a sticky "tracklist",
-     then one side per finding with a live chart. Dark on purpose: the charts live on the same ground. */
+     then one side per finding with a live chart. Colours: dark version of my portfolio palette. */
   :root {
     color-scheme: dark;
-    --ground: #141413;
-    --sleeve: #1C1B19;
-    --groove: #2E2D2B;
-    --ink: #F0EEE6;
-    --body-ink: #D9D7CF;
-    --label: #A8A69D;
-    --magma: #F08A5D;
+    /* Dark version of the portfolio palette (Navy #0B2D40, Blue #1D6596, Ice #EEF3F7, Rule #C9D6E0) */
+    --ground: #0B2D40;      /* Navy: page background */
+    --sleeve: #0F3750;      /* raised panels, a step lighter than Navy */
+    --groove: #22506B;      /* divider lines */
+    --ink: #EEF3F7;         /* Ice: headlines and big numbers */
+    --body-ink: #C9D6E0;    /* Rule line colour, used as body text on dark */
+    --label: #93AABB;       /* muted grey-blue, lightened for dark */
+    --accent: #7DB8E4;      /* Blue, lightened so small labels and links read on Navy */
+    --brand: #1D6596;       /* Blue as-is, for fills and bars */
     --display: "Unbounded", "Arial Black", system-ui, sans-serif;
     --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -30,15 +32,15 @@
   body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
   .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   img { max-width: 100%; height: auto; display: block; }
-  a { color: var(--magma); }
-  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--magma); outline-offset: 2px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .cover { position: relative; border-bottom: 1px solid var(--groove); }
   .cover .band { height: clamp(110px, 21vw, 220px); background: url(img/hero.webp) center / cover; }
   .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, var(--ground) 100%); }
   .cover .credit { position: absolute; z-index: 1; right: max(16px, env(safe-area-inset-right, 0px)); top: 10px; font: 12px var(--mono); color: var(--ink); opacity: .8; }
   header.intro { padding-block: 8px 36px; display: grid; gap: 16px; }
-  .kicker { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--magma); }
+  .kicker { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
   h1 { font: 700 clamp(32px, 6vw, 58px)/1.05 var(--display); margin: 0; text-wrap: balance; }
   .lead { font-size: 18px; max-width: 64ch; margin: 0; }
   .lead + p { color: var(--label); max-width: 64ch; margin: 0; }
@@ -50,16 +52,16 @@
   nav.tracklist { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(6px); border-block: 1px solid var(--groove); }
   nav.tracklist ol { list-style: none; margin: 0 auto; padding-block: 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   nav.tracklist a { display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; text-decoration: none; color: var(--label); font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; }
-  nav.tracklist a i { font: 500 11px var(--mono); font-style: normal; color: var(--magma); }
+  nav.tracklist a i { font: 500 11px var(--mono); font-style: normal; color: var(--accent); }
   nav.tracklist a:hover, nav.tracklist a.on { color: var(--ink); border-color: var(--groove); background: var(--sleeve); }
 
   section.track { padding-block: 56px 8px; scroll-margin-top: 64px; display: grid; gap: 20px; }
   .track-head { display: grid; gap: 10px; max-width: 70ch; min-width: 0; }
   .side { font: 500 12px/1 var(--mono); letter-spacing: .12em; color: var(--label); text-transform: uppercase; }
-  .side b { color: var(--magma); font-weight: 500; }
+  .side b { color: var(--accent); font-weight: 500; }
   h2 { font: 700 clamp(22px, 3.2vw, 30px)/1.2 var(--display); margin: 0; text-wrap: balance; }
   .track p { margin: 0; color: var(--body-ink); }
-  .finding { border-left: 2px solid var(--magma); padding-left: 14px; color: var(--ink) !important; }
+  .finding { border-left: 3px solid var(--brand); padding-left: 14px; color: var(--ink) !important; }
   .method { font: 13px/1.55 var(--mono); color: var(--label) !important; }
   .hint { font: 12px var(--mono); color: var(--label); }
   .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 32px; align-items: center; }
@@ -80,7 +82,7 @@
 
   /* Song finder */
   .finder { display: grid; gap: 14px; background: var(--sleeve); border: 1px solid var(--groove); border-radius: 12px; padding: 18px; }
-  .finder label { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--magma); }
+  .finder label { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
   .finder input { width: 100%; font: 16px var(--body); color: var(--ink); background: var(--ground); border: 1px solid var(--groove); border-radius: 8px; padding: 10px 12px; }
   .song { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
   @media (max-width: 760px) { .song { grid-template-columns: 1fr; } }
@@ -91,12 +93,12 @@
   .meters { display: grid; gap: 5px; }
   .meter { display: grid; grid-template-columns: 82px minmax(0, 1fr) 36px; gap: 8px; align-items: center; font-size: 13px; color: var(--label); }
   .meter .bar { height: 6px; border-radius: 3px; background: var(--groove); overflow: hidden; }
-  .meter .bar i { display: block; height: 100%; background: var(--magma); border-radius: 3px; }
+  .meter .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
   .meter b { font: 400 12px var(--mono); font-variant-numeric: tabular-nums; color: var(--body-ink); text-align: right; }
   .alike { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
   .alike button { all: unset; cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; padding: 6px 8px; border-radius: 6px; width: 100%; box-sizing: border-box; }
   .alike button:hover, .alike button:focus-visible { background: var(--ground); outline: 1px solid var(--groove); }
-  .alike i { font: 12px var(--mono); font-style: normal; color: var(--magma); }
+  .alike i { font: 12px var(--mono); font-style: normal; color: var(--accent); }
   .alike span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .alike small { color: var(--label); }
 
@@ -303,10 +305,10 @@
 (function () {
   var css = getComputedStyle(document.documentElement);
   var T = function (n) { return css.getPropertyValue(n).trim(); };
-  var INK = T('--ink'), LABEL = T('--label'), GROOVE = T('--groove'), GROUND = T('--ground'), MAGMA = T('--magma');
+  var INK = T('--ink'), LABEL = T('--label'), GROOVE = T('--groove'), GROUND = T('--ground'), ACCENT = T('--accent');
   // Fixed categorical order, validated for colour-blind separation on the dark ground; "Other" is grey
   var SERIES = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#0ca30c', '#9085e9', '#e66767'];
-  var OTHER = '#6B6A65';
+  var OTHER = '#7A8C99';
   var FONT = { family: 'IBM Plex Sans, system-ui, sans-serif', color: LABEL, size: 12 };
   var CONFIG = { displayModeBar: false, responsive: true };
   var MOOD_NAMES = { danceable: 'Danceable', relaxed: 'Relaxed', happy: 'Happy', sad: 'Sad', acoustic: 'Acoustic',
@@ -316,7 +318,7 @@
   function base(extra) {
     var l = { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: FONT,
               margin: { l: 56, r: 16, t: 16, b: 48 }, hovermode: 'closest',
-              hoverlabel: { bgcolor: '#1F1E1D', bordercolor: GROOVE, font: { color: INK, family: FONT.family, size: 13 } },
+              hoverlabel: { bgcolor: '#0F3750', bordercolor: GROOVE, font: { color: INK, family: FONT.family, size: 13 } },
               legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant' } };
     for (var k in extra) l[k] = extra[k];
     return l;
@@ -368,16 +370,16 @@
     var gal = ready('galaxy');
     var galAxes = { xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } };
     var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'pan',
-      legend: { font: { color: INK }, bgcolor: 'rgba(20,20,19,.7)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
+      legend: { font: { color: INK }, bgcolor: 'rgba(11,45,64,.75)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
     var highlight = function (xs, ys) {
       return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
                marker: { size: 18, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2.5 } } };
     };
     var CONT = {
-      v: { title: 'Happiness', scale: [[0, '#3987e5'], [0.5, '#6B6A65'], [1, '#d95926']], mid: 5, label: 'sad → happy (valence)' },
-      a: { title: 'Energy', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'calm → intense (arousal)' },
-      bpm: { title: 'BPM', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'tempo', range: [70, 170] },
-      danceable: { title: 'Danceable', scale: [[0, '#1d3b66'], [1, '#9cc4f5']], label: 'danceability' }
+      v: { title: 'Happiness', scale: [[0, '#4F9BE8'], [0.5, '#7A8C99'], [1, '#E2703F']], mid: 5, label: 'sad → happy (valence)' },
+      a: { title: 'Energy', scale: [[0, '#1D6596'], [1, '#EEF3F7']], label: 'calm → intense (arousal)' },
+      bpm: { title: 'BPM', scale: [[0, '#1D6596'], [1, '#EEF3F7']], label: 'tempo', range: [70, 170] },
+      danceable: { title: 'Danceable', scale: [[0, '#1D6596'], [1, '#EEF3F7']], label: 'danceability' }
     };
     function galaxyTraces(mode) {
       if (mode === 'genre') {
@@ -477,14 +479,19 @@
       if (p[1] === 'major') maj[root] = (maj[root] || 0) + 1; else mnr[root] = (mnr[root] || 0) + 1;
     });
     var slot = FIFTHS.map(function (m, i) { return nice(m) + ' / ' + niceMinor(FIFTHS[(i + 3) % 12]) + 'm'; });
+    // Each slot is 30°: the major bar sits just left of the slot's centre, the minor bar just right
+    var angles = FIFTHS.map(function (m, i) { return i * 30; });
     Plotly.newPlot(ready('keys'), [
-      { type: 'barpolar', name: 'Major', theta: slot, r: FIFTHS.map(function (m) { return maj[m] || 0; }), marker: { color: '#3987e5', line: { color: GROUND, width: 2 } },
-        // width/offset are in key slots (1 = one slot of the wheel), not degrees
-        hovertemplate: '%{customdata} major: %{r} songs<extra></extra>', customdata: FIFTHS.map(nice), width: 0.42, offset: -0.44 },
-      { type: 'barpolar', name: 'Minor', theta: slot, r: FIFTHS.map(function (m, i) { return mnr[FIFTHS[(i + 3) % 12]] || 0; }), marker: { color: '#d95926', line: { color: GROUND, width: 2 } },
-        hovertemplate: '%{customdata} minor: %{r} songs<extra></extra>', customdata: FIFTHS.map(function (m, i) { return niceMinor(FIFTHS[(i + 3) % 12]); }), width: 0.42, offset: 0.02 }
+      { type: 'barpolar', name: 'Major', theta: angles.map(function (a) { return a - 7; }), r: FIFTHS.map(function (m) { return maj[m] || 0; }),
+        width: 13, marker: { color: '#3987e5', line: { color: GROUND, width: 1 } },
+        hovertemplate: '%{customdata} major: %{r} songs<extra></extra>', customdata: FIFTHS.map(nice) },
+      { type: 'barpolar', name: 'Minor', theta: angles.map(function (a) { return a + 7; }), r: FIFTHS.map(function (m, i) { return mnr[FIFTHS[(i + 3) % 12]] || 0; }),
+        width: 13, marker: { color: '#d95926', line: { color: GROUND, width: 1 } },
+        hovertemplate: '%{customdata} minor: %{r} songs<extra></extra>', customdata: FIFTHS.map(function (m, i) { return niceMinor(FIFTHS[(i + 3) % 12]); }) }
     ], base({ margin: { l: 40, r: 40, t: 30, b: 30 },
-              polar: { bgcolor: 'rgba(0,0,0,0)', angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { color: INK, size: narrow ? 10 : 12 }, linecolor: GROOVE, gridcolor: GROOVE },
+              polar: { bgcolor: 'rgba(0,0,0,0)', barmode: 'overlay',
+                       angularaxis: { direction: 'clockwise', rotation: 90, thetaunit: 'degrees', tickmode: 'array', tickvals: angles, ticktext: slot,
+                                      tickfont: { color: INK, size: narrow ? 10 : 12 }, linecolor: GROOVE, gridcolor: GROOVE },
                        radialaxis: { showticklabels: false, gridcolor: GROOVE, linecolor: 'rgba(0,0,0,0)' } },
               legend: { orientation: 'h', y: -0.08, x: 0.5, xanchor: 'center', font: { color: INK } } }), CONFIG);
 
@@ -553,12 +560,12 @@
       Plotly.newPlot(mapEl, [{
         type: 'choropleth', locations: O.iso3, z: O.songs.map(Math.sqrt), text: mapHover, hovertemplate: '%{text}<extra></extra>',
         // square-root scale so one big country does not wash out the rest
-        colorscale: [[0, '#3B2A24'], [0.35, '#8A4A33'], [0.7, '#D97757'], [1, '#F5C4B3']], zmin: 0, zmax: Math.sqrt(maxSongs),
+        colorscale: [[0, '#1D6596'], [0.4, '#3E8DC4'], [0.75, '#8FC3EA'], [1, '#EEF3F7']], zmin: 0, zmax: Math.sqrt(maxSongs),
         marker: { line: { color: GROOVE, width: 0.4 } },
         colorbar: { title: { text: 'songs', font: { color: LABEL } }, tickvals: ticks.map(Math.sqrt), ticktext: ticks.map(String),
                     tickfont: { color: LABEL }, thickness: 10, len: 0.55, outlinewidth: 0 }
       }], base({ margin: { l: 0, r: 0, t: 0, b: 0 }, dragmode: 'pan',
-        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#262624',
+        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#14405A',
                showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' } } }), CONFIG);
       var top3 = [0, 1, 2].filter(function (k) { return k < O.name.length; });
       document.getElementById('origins-finding').textContent =
