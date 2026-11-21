@@ -328,7 +328,7 @@
   fetch('data/library.json').then(function (r) {
     if (!r.ok) throw new Error(r.status);
     return r.json();
-  }).then(build).catch(function () { fail('The chart data could not load. Open this page from its website, not as a local file.'); });
+  }).then(build).catch(function (e) { console.error(e); fail('The charts could not load: ' + (e && e.message || e)); });
 
   function build(D) {
     var S = D.songs, N = S.name.length, G = D.genres;
