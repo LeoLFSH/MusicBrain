@@ -143,7 +143,8 @@
     <li><a href="#rhythm"><i>B1</i>Rhythm</a></li>
     <li><a href="#instruments"><i>B2</i>Instruments</a></li>
     <li><a href="#time"><i>B3</i>Time</a></li>
-    <li><a href="#signal"><i>B4</i>One song</a></li>
+    <li><a href="#origins"><i>B4</i>Origins</a></li>
+    <li><a href="#signal"><i>B5</i>One song</a></li>
   </ol>
 </nav>
 
@@ -251,10 +252,22 @@
     <p class="method">Spotify release dates and Liked Songs timestamps</p>
   </section>
 
+  <section class="track" id="origins">
+    <div class="track-head">
+      <div class="side"><b>B4</b> · Origins</div>
+      <h2>Where my music comes from</h2>
+      <p>Each country is coloured by how many of my songs come from artists born or formed there. Hover a country to
+        see who they are.</p>
+      <p class="finding" id="origins-finding">Loading…</p>
+      <p class="method" id="origins-method">MusicBrainz (matched through each song's ISRC code), with Last.fm tags as a fallback</p>
+    </div>
+    <div class="chart tall loading" id="worldmap">Loading…</div>
+  </section>
+
   <section class="track" id="signal">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>B4</b> · One song up close</div>
+        <div class="side"><b>B5</b> · One song up close</div>
         <h2>Song card: Marianne</h2>
         <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
           the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
@@ -274,7 +287,6 @@
       <li><b>Taste clusters</b><span>K-Means on the sound embeddings and Last.fm tags, checked with silhouette and elbow plots.</span></li>
       <li><b>A recommender with range</b><span>Broad candidates, a small neural taste model, and ranking that rewards novelty.</span></li>
       <li><b>The people behind the music</b><span>Producers, engineers and session musicians from Discogs and MusicBrainz credits.</span></li>
-      <li><b>Where it comes from</b><span>A world map of artist origins.</span></li>
       <li><b>Listening over time</b><span>Calendar heatmaps and forgotten favourites from my full Spotify history.</span></li>
     </ol>
   </section>
@@ -454,19 +466,23 @@
     // ---------- A4 key wheel ----------
     var FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'];
     var ENH = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+    // Spell keys the way musicians do: flats for these major keys, sharps for most minor keys
     var NICE = { 'C#': 'D♭', 'G#': 'A♭', 'D#': 'E♭', 'A#': 'B♭', 'F#': 'F♯' };
+    var NICE_MINOR = { 'C#': 'C♯', 'G#': 'G♯', 'D#': 'E♭', 'A#': 'B♭', 'F#': 'F♯' };
     var nice = function (k) { return NICE[k] || k; };
+    var niceMinor = function (k) { return NICE_MINOR[k] || k; };
     var maj = {}, mnr = {};
     S.key.forEach(function (k) {
       if (!k) return; var p = k.split(' '), root = ENH[p[0]] || p[0];
       if (p[1] === 'major') maj[root] = (maj[root] || 0) + 1; else mnr[root] = (mnr[root] || 0) + 1;
     });
-    var slot = FIFTHS.map(function (m, i) { return nice(m) + ' / ' + nice(FIFTHS[(i + 3) % 12]) + 'm'; });
+    var slot = FIFTHS.map(function (m, i) { return nice(m) + ' / ' + niceMinor(FIFTHS[(i + 3) % 12]) + 'm'; });
     Plotly.newPlot(ready('keys'), [
       { type: 'barpolar', name: 'Major', theta: slot, r: FIFTHS.map(function (m) { return maj[m] || 0; }), marker: { color: '#3987e5', line: { color: GROUND, width: 2 } },
-        hovertemplate: '%{customdata} major: %{r} songs<extra></extra>', customdata: FIFTHS.map(nice), width: 13, offset: -14 },
+        // width/offset are in key slots (1 = one slot of the wheel), not degrees
+        hovertemplate: '%{customdata} major: %{r} songs<extra></extra>', customdata: FIFTHS.map(nice), width: 0.42, offset: -0.44 },
       { type: 'barpolar', name: 'Minor', theta: slot, r: FIFTHS.map(function (m, i) { return mnr[FIFTHS[(i + 3) % 12]] || 0; }), marker: { color: '#d95926', line: { color: GROUND, width: 2 } },
-        hovertemplate: '%{customdata} minor: %{r} songs<extra></extra>', customdata: FIFTHS.map(function (m, i) { return nice(FIFTHS[(i + 3) % 12]); }), width: 13, offset: 1 }
+        hovertemplate: '%{customdata} minor: %{r} songs<extra></extra>', customdata: FIFTHS.map(function (m, i) { return niceMinor(FIFTHS[(i + 3) % 12]); }), width: 0.42, offset: 0.02 }
     ], base({ margin: { l: 40, r: 40, t: 30, b: 30 },
               polar: { bgcolor: 'rgba(0,0,0,0)', angularaxis: { direction: 'clockwise', rotation: 90, tickfont: { color: INK, size: narrow ? 10 : 12 }, linecolor: GROOVE, gridcolor: GROOVE },
                        radialaxis: { showticklabels: false, gridcolor: GROOVE, linecolor: 'rgba(0,0,0,0)' } },
@@ -521,6 +537,40 @@
       base({ margin: { l: 48, r: 16, t: 36, b: 36 }, title: { text: 'Songs added to Liked Songs per month', x: 0, xref: 'paper', font: { color: INK, size: 14 } },
              xaxis: axis('', { type: 'date' }), yaxis: axis('songs'), bargap: 0.15 }), CONFIG);
 
+    // ---------- B4 world map ----------
+    var O = D.origins || { iso3: [], name: [], songs: [], artists: [], top: [], found: 0, checked: 0 };
+    var mapEl = ready('worldmap');
+    if (O.iso3.length) {
+      var totalSongs = O.songs.reduce(function (s, x) { return s + x; }, 0);
+      var share = function (k) { return Math.round(100 * O.songs[k] / totalSongs) + '%'; };
+      var mapHover = O.name.map(function (n, k) {
+        var top = O.top[k].map(function (t) { return esc(t[0]) + ' · ' + t[1]; }).join('<br>');
+        var more = O.artists[k] > O.top[k].length ? '<br><i>+ ' + (O.artists[k] - O.top[k].length) + ' more artists</i>' : '';
+        return '<b>' + esc(n) + '</b><br>' + O.songs[k] + ' songs (' + share(k) + ') · ' + O.artists[k] + ' artists<br><br>' + top + more;
+      });
+      var maxSongs = Math.max.apply(null, O.songs);
+      var ticks = [1, 10, 50, 200, 500, 1000].filter(function (v) { return v <= maxSongs; });
+      Plotly.newPlot(mapEl, [{
+        type: 'choropleth', locations: O.iso3, z: O.songs.map(Math.sqrt), text: mapHover, hovertemplate: '%{text}<extra></extra>',
+        // square-root scale so one big country does not wash out the rest
+        colorscale: [[0, '#3B2A24'], [0.35, '#8A4A33'], [0.7, '#D97757'], [1, '#F5C4B3']], zmin: 0, zmax: Math.sqrt(maxSongs),
+        marker: { line: { color: GROOVE, width: 0.4 } },
+        colorbar: { title: { text: 'songs', font: { color: LABEL } }, tickvals: ticks.map(Math.sqrt), ticktext: ticks.map(String),
+                    tickfont: { color: LABEL }, thickness: 10, len: 0.55, outlinewidth: 0 }
+      }], base({ margin: { l: 0, r: 0, t: 0, b: 0 }, dragmode: 'pan',
+        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#262624',
+               showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' } } }), CONFIG);
+      var top3 = [0, 1, 2].filter(function (k) { return k < O.name.length; });
+      document.getElementById('origins-finding').textContent =
+        top3.map(function (k) { return O.name[k] + ' (' + share(k) + ')'; }).join(', ') + ' make up most of my library, out of ' +
+        O.name.length + ' countries in total.';
+      document.getElementById('origins-method').textContent += ' · origin known for ' + fmt(O.found) + ' of ' +
+        fmt(O.checked) + ' artists checked so far (' + fmt(D.summary.artists_total) + ' in total)';
+    } else {
+      mapEl.textContent = 'Artist origins are still being collected.';
+      document.getElementById('origins-finding').textContent = 'Coming soon.';
+    }
+
     // ---------- Song finder ----------
     var labels = S.name.map(function (n, i) { return n + ' — ' + S.artist[i]; });
     var lookup = {}; labels.forEach(function (l, i) { lookup[l.toLowerCase()] = i; });
@@ -534,7 +584,8 @@
       drawGalaxy();
       Plotly.restyle(emo, { x: [[S.v[i]]], y: [[S.a[i]]] }, [emoSel]);
       input.value = labels[i];
-      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i]].filter(Boolean);
+      var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
+      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from].filter(Boolean);
       var meters = ['happy', 'sad', 'relaxed', 'danceable', 'acoustic', 'electronic'].map(function (m) {
         var p = Math.round((S[m][i] || 0) * 100);
         return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
