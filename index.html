@@ -356,7 +356,7 @@
     var gal = ready('galaxy');
     var galAxes = { xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } };
     var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: 'pan',
-      legend: { font: { color: INK }, bgcolor: 'rgba(20,20,19,.7)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v' } }, galAxes));
+      legend: { font: { color: INK }, bgcolor: 'rgba(20,20,19,.7)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
     var highlight = function (xs, ys) {
       return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
                marker: { size: 18, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2.5 } } };
@@ -431,7 +431,7 @@
                { type: 'line', y0: 5, y1: 5, x0: vMin, x1: vMax, line: { color: GROOVE, width: 1.5 } }],
       annotations: [q(vMax, aMax, 'Excited · happy', 'right', 'top'), q(vMin, aMax, 'Tense · angry', 'left', 'top'),
                     q(vMin, aMin, 'Sad · tired', 'left', 'bottom'), q(vMax, aMin, 'Calm · content', 'right', 'bottom')],
-      legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', y: narrow ? -0.25 : 1 },
+      legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', y: narrow ? -0.25 : 1, traceorder: 'reversed' },
       dragmode: 'zoom'
     }), CONFIG);
 
