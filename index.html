@@ -94,6 +94,12 @@
   .card .side { margin-top: 4px; }
   .card .show { justify-self: start; }
   .subhead { margin-top: 28px; }
+  table.years { border-collapse: collapse; min-width: 720px; width: 100%; font-size: 13px; }
+  table.years th { font: 500 12px var(--mono); color: var(--label); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--groove); }
+  table.years td { padding: 6px 8px; border-bottom: 1px solid var(--groove); vertical-align: top; color: var(--body-ink); }
+  table.years td small { color: var(--label); font: 11px var(--mono); }
+  table.years td.rank { font: 12px var(--mono); color: var(--accent); }
+  .forgot { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .scrollx { overflow-x: auto; }
   #vibe-pills .pill { font-size: 13px; }
   .subhead h3 { font: 700 clamp(18px, 2.4vw, 22px)/1.25 var(--display); margin: 0; text-wrap: balance; }
@@ -171,8 +177,9 @@
     <li><a href="#rhythm"><i>B2</i>Rhythm</a></li>
     <li><a href="#instruments"><i>B3</i>Instruments</a></li>
     <li><a href="#time"><i>B4</i>Time</a></li>
-    <li><a href="#origins"><i>B5</i>Origins</a></li>
-    <li><a href="#signal"><i>B6</i>One song</a></li>
+    <li><a href="#history"><i>B5</i>History</a></li>
+    <li><a href="#origins"><i>B6</i>Origins</a></li>
+    <li><a href="#signal"><i>B7</i>One song</a></li>
   </ol>
 </nav>
 
@@ -363,9 +370,38 @@
     <p class="method">Spotify release dates and Liked Songs timestamps</p>
   </section>
 
+  <section class="track" id="history">
+    <div class="track-head">
+      <div class="side"><b>B5</b> · History</div>
+      <h2>Every play since 2018</h2>
+      <p>My full Spotify streaming history: every time a song started, how long it played, and whether I skipped it.
+        A stream counts from 30 seconds, as Spotify counts it.</p>
+      <p class="finding" id="hist-finding">Loading…</p>
+    </div>
+    <div class="stats" id="hist-stats"></div>
+    <div class="scrollx"><div class="chart loading" id="hist-weekly" style="min-width:720px;height:340px">Loading…</div></div>
+    <div class="pair">
+      <div class="chart mid loading" id="hist-hour">Loading…</div>
+      <div class="chart mid loading" id="hist-taste">Loading…</div>
+    </div>
+    <div class="track-head subhead">
+      <div class="side">Top artists, year by year</div>
+      <h3>Who I listened to most each year</h3>
+    </div>
+    <div class="scrollx"><table class="years" id="hist-years"></table></div>
+    <div class="track-head subhead">
+      <div class="side">Forgotten favourites</div>
+      <h3>Songs I played a lot, then stopped</h3>
+      <p>At least 25 streams, and not played in the last 12 months.</p>
+    </div>
+    <ul class="alike forgot" id="hist-forgot"></ul>
+    <p class="method">Spotify Extended Streaming History · local time from the country of each play (US plays in Central time) ·
+      IP addresses were dropped at import</p>
+  </section>
+
   <section class="track" id="origins">
     <div class="track-head">
-      <div class="side"><b>B5</b> · Origins</div>
+      <div class="side"><b>B6</b> · Origins</div>
       <h2>Where my music comes from</h2>
       <p>Each country is coloured by how many of my songs come from artists born or formed there. Hover a country to
         see who they are.</p>
@@ -379,7 +415,7 @@
   <section class="track" id="signal">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>B6</b> · One song up close</div>
+        <div class="side"><b>B7</b> · One song up close</div>
         <h2>Song card: Marianne</h2>
         <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
           the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
@@ -398,7 +434,6 @@
     <ol>
       <li><b>A recommender with range</b><span>Broad candidates, a small neural taste model, and ranking that rewards novelty.</span></li>
       <li><b>The people behind the music</b><span>Producers, engineers and session musicians from Discogs and MusicBrainz credits.</span></li>
-      <li><b>Listening over time</b><span>Calendar heatmaps and forgotten favourites from my full Spotify history.</span></li>
     </ol>
   </section>
 
@@ -1047,6 +1082,74 @@
       document.getElementById('origins-finding').textContent = 'Coming soon.';
     }
 
+    // ---------- B5 listening history ----------
+    var H = D.history, histSec = document.getElementById('history');
+    if (!H) {
+      histSec.hidden = true;
+      var nh = document.querySelector('nav.tracklist a[href="#history"]'); if (nh) nh.parentNode.hidden = true;
+    } else {
+      var hs = H.stats;
+      document.getElementById('hist-stats').innerHTML = [
+        [fmt(hs.hours), 'hours of music since ' + hs.since], [fmt(hs.streams), 'streams of 30 s or more'],
+        [fmt(hs.songs), 'different songs'], [fmt(hs.artists), 'artists'], [Math.round(hs.skip_rate * 100) + '%', 'of plays skipped']
+      ].map(function (t) { return '<div class="stat"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('');
+      var busiest = H.top_years.slice().sort(function (a, b) { return b.hours - a.hours; })[0];
+      document.getElementById('hist-finding').textContent = fmt(hs.hours) + ' hours is ' + Math.round(hs.hours / 24) +
+        ' full days of music. My busiest year was ' + busiest.year + ' (' + fmt(busiest.hours) + ' h). ' + fmt(hs.not_in_library) +
+        ' songs I streamed never made it into my library, a hidden part of my taste that the recommender can use.';
+
+      var W = H.weekly, ramp = [[0, '#16191C'], [0.15, '#0D2F47'], [0.45, '#1D6596'], [0.75, '#7DB8E4'], [1, '#EEF3F7']];
+      var wkDate = function (y, w) { return new Date(y, 0, 1 + 7 * w).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
+      Plotly.newPlot(ready('hist-weekly'), [{
+        type: 'heatmap', z: W.hours, x: W.hours[0].map(function (v, w) { return w; }), y: W.years.map(String),
+        colorscale: ramp, xgap: 2, ygap: 2, zmin: 0,
+        customdata: W.years.map(function (y, r) { return W.hours[r].map(function (v, w) { return [wkDate(y, w), W.artist[r][w] || '—']; }); }),
+        hovertemplate: 'Week of %{customdata[0]} %{y}<br>%{z:.1f} hours · most played: %{customdata[1]}<extra></extra>',
+        colorbar: { title: { text: 'hours<br>per week', font: { color: LABEL } }, tickfont: { color: LABEL }, thickness: 10, len: 0.8, outlinewidth: 0 }
+      }], base({ margin: { l: 48, r: 12, t: 36, b: 32 },
+                 title: { text: 'Every week since ' + W.years[0], x: 0.02, xref: 'container', font: { color: INK, size: 14 } },
+                 xaxis: axis('', { tickvals: [0, 4.3, 8.7, 13, 17.3, 21.7, 26, 30.3, 34.7, 39, 43.3, 47.7],
+                                   ticktext: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], showgrid: false }),
+                 yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK } }) }), CONFIG);
+
+      Plotly.newPlot(ready('hist-hour'), [{
+        type: 'heatmap', z: H.hourweek, x: H.hourweek[0].map(function (v, h) { return h; }), y: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        colorscale: ramp, xgap: 1, ygap: 1, showscale: false, hovertemplate: '%{y} %{x}:00 · %{z:.0f} hours in total<extra></extra>'
+      }], base({ margin: { l: 44, r: 12, t: 36, b: 40 },
+                 title: { text: 'When I listen (local time)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                 xaxis: axis('hour of the day', { dtick: 3, showgrid: false }), yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK } }) }), CONFIG);
+
+      var T = H.taste;
+      Plotly.newPlot(ready('hist-taste'), T.clusters.map(function (c, ci) {
+        var k = CLN.indexOf(c);
+        return { type: 'scatter', mode: 'lines', stackgroup: 'one', name: c, x: T.quarters, y: T.share[ci].map(function (v) { return v * 100; }),
+                 line: { width: 0.5, color: SERIES[(k >= 0 ? k : ci) % SERIES.length] }, hovertemplate: c + ' · %{x}: %{y:.0f}%<extra></extra>' };
+      }), base({ margin: { l: 44, r: 12, t: 36, b: 40 }, showlegend: !narrow,
+                 title: { text: 'My taste clusters over time (% of listening)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                 legend: { font: { color: INK, size: 10 }, orientation: 'h', y: -0.18 },
+                 xaxis: axis('', { showgrid: false, nticks: 8 }), yaxis: axis('%', { range: [0, 100] }) }), CONFIG);
+
+      var maxRows = 5;
+      var head = '<tr><th></th>' + H.top_years.map(function (y) { return '<th>' + y.year + '<br><small>' + fmt(y.hours) + ' h</small></th>'; }).join('') + '</tr>';
+      var body = '';
+      for (var rr = 0; rr < maxRows; rr++) {
+        body += '<tr><td class="rank">' + (rr + 1) + '</td>' + H.top_years.map(function (y) {
+          var a = y.artists[rr]; return '<td>' + (a ? esc(a[0]) + '<br><small>' + a[1] + ' h</small>' : '') + '</td>';
+        }).join('') + '</tr>';
+      }
+      document.getElementById('hist-years').innerHTML = head + body;
+
+      var fl = document.getElementById('hist-forgot');
+      fl.innerHTML = H.forgotten.map(function (f, n) {
+        var inner = '<i>' + (n + 1) + '</i><span>' + esc(f.track) + ' <small>' + esc(f.artist) + ' · ' + f.streams + ' streams · last ' + f.last + '</small></span>';
+        return '<li>' + (f.idx != null ? '<button type="button" data-song="' + f.idx + '">' + inner + '</button>' : '<button type="button" disabled>' + inner + '</button>') + '</li>';
+      }).join('');
+      fl.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-song]');
+        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+      });
+    }
+
     // ---------- Song finder ----------
     var labels = S.name.map(function (n, i) { return n + ' — ' + S.artist[i]; });
     var lookup = {}; labels.forEach(function (l, i) { lookup[l.toLowerCase()] = i; });
@@ -1062,7 +1165,8 @@
       input.value = labels[i];
       var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
       var inCluster = CL && S.k[i] != null ? 'cluster: ' + CLN[S.k[i]] : null;
-      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from, inCluster].filter(Boolean);
+      var played = S.streams && S.streams[i] ? 'streamed ' + S.streams[i] + '×' + (S.first_play[i] ? ' since ' + S.first_play[i] : '') : null;
+      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from, inCluster, played].filter(Boolean);
       var meters = ['happy', 'sad', 'relaxed', 'danceable', 'acoustic', 'electronic'].map(function (m) {
         var p = Math.round((S[m][i] || 0) * 100);
         return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
