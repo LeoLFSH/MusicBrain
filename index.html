@@ -1110,7 +1110,7 @@
                  title: { text: 'Every week since ' + W.years[0], x: 0.02, xref: 'container', font: { color: INK, size: 14 } },
                  xaxis: axis('', { tickvals: [0, 4.3, 8.7, 13, 17.3, 21.7, 26, 30.3, 34.7, 39, 43.3, 47.7],
                                    ticktext: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], showgrid: false }),
-                 yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK } }) }), CONFIG);
+                 yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK }, type: 'category', dtick: 1 }) }), CONFIG);
 
       Plotly.newPlot(ready('hist-hour'), [{
         type: 'heatmap', z: H.hourweek, x: H.hourweek[0].map(function (v, h) { return h; }), y: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
