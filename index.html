@@ -325,7 +325,7 @@
 
   if (!window.Plotly) { fail('The charts could not load (Plotly is blocked or offline).'); return; }
 
-  fetch('data/library.json').then(function (r) {
+  fetch('data/library.json', { cache: 'no-cache' }).then(function (r) {  // revalidate, so data updates show at once
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }).then(build).catch(function (e) { console.error(e); fail('The charts could not load: ' + (e && e.message || e)); });
