@@ -560,13 +560,13 @@
       Plotly.newPlot(mapEl, [{
         type: 'choropleth', locations: O.iso3, z: O.songs.map(Math.sqrt), text: mapHover, hovertemplate: '%{text}<extra></extra>',
         // square-root scale so one big country does not wash out the rest
-        colorscale: [[0, '#1D6596'], [0.4, '#3E8DC4'], [0.75, '#8FC3EA'], [1, '#EEF3F7']], zmin: 0, zmax: Math.sqrt(maxSongs),
+        colorscale: [[0, '#2A78B3'], [0.4, '#4D9AD2'], [0.75, '#9CCBEE'], [1, '#EEF3F7']], zmin: 0, zmax: Math.sqrt(maxSongs),
         marker: { line: { color: GROOVE, width: 0.4 } },
         colorbar: { title: { text: 'songs', font: { color: LABEL } }, tickvals: ticks.map(Math.sqrt), ticktext: ticks.map(String),
                     tickfont: { color: LABEL }, thickness: 10, len: 0.55, outlinewidth: 0 }
       }], base({ margin: { l: 0, r: 0, t: 0, b: 0 }, dragmode: 'pan',
-        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#14405A',
-               showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' } } }), CONFIG);
+        geo: { bgcolor: 'rgba(0,0,0,0)', showframe: false, showcoastlines: false, showland: true, landcolor: '#0F3449',
+               showcountries: true, countrycolor: GROOVE, projection: { type: 'natural earth' }, lataxis: { range: [-58, 85] } } }), CONFIG);
       var top3 = [0, 1, 2].filter(function (k) { return k < O.name.length; });
       document.getElementById('origins-finding').textContent =
         top3.map(function (k) { return O.name[k] + ' (' + share(k) + ')'; }).join(', ') + ' make up most of my library, out of ' +
