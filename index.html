@@ -68,6 +68,7 @@
   @media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
   .chart { width: 100%; min-width: 0; border: 1px solid var(--groove); border-radius: 10px; background: var(--ground); }
   .chart.tall { height: clamp(420px, 62vw, 640px); }
+  @media (max-width: 600px) { .chart.tall { height: 560px; } }
   .chart.mid { height: clamp(360px, 45vw, 480px); }
   .chart.short { height: 300px; }
   .loading { display: grid; place-items: center; color: var(--label); font: 13px var(--mono); }
@@ -349,6 +350,9 @@
   // On touch screens a chart that grabs every swipe makes the page impossible to scroll. Charts start locked:
   // a tap still shows the song, and a "Zoom & move" button unlocks panning plus zoom buttons for that chart.
   var touch = window.matchMedia('(pointer: coarse)').matches;
+  // Phones: genre legends sit above the plot in rows, so they never cover the axis titles
+  var LEG_TOP = narrow ? { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom' } : {};
+  var TOP_GAP = narrow ? 120 : 16;
   var unlocked = {};
   function dragFor(id, desktop) { return touch ? (unlocked[id] ? 'pan' : false) : desktop; }
   function configFor(id, three) {
@@ -433,8 +437,8 @@
       return [lo - p, hi + p];
     };
     var galAxes = { xaxis: { visible: false, range: pad(S.x) }, yaxis: { visible: false, range: pad(S.y), scaleanchor: 'x' } };
-    var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: dragFor('galaxy', 'zoom'),
-      legend: { font: { color: INK }, bgcolor: 'rgba(17,19,21,.75)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', traceorder: 'reversed' } }, galAxes));
+    var galLayout = base(Object.assign({ margin: { l: 8, r: 8, t: narrow ? TOP_GAP : 8, b: 8 }, dragmode: dragFor('galaxy', 'zoom'),
+      legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(17,19,21,.75)', itemsizing: 'constant', traceorder: 'reversed' }, LEG_TOP) }, galAxes));
     var highlight = function (xs, ys) {
       return { x: xs, y: ys, mode: 'markers', type: 'scattergl', hoverinfo: 'skip', showlegend: false, name: 'selected',
                marker: { size: 18, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2.5 } } };
@@ -518,7 +522,8 @@
                { type: 'line', y0: 5, y1: 5, x0: vMin, x1: vMax, line: { color: GROOVE, width: 1.5 } }],
       annotations: [q(vMax, aMax, 'Excited · happy', 'right', 'top'), q(vMin, aMax, 'Tense · angry', 'left', 'top'),
                     q(vMin, aMin, 'Sad · tired', 'left', 'bottom'), q(vMax, aMin, 'Calm · content', 'right', 'bottom')],
-      legend: { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', orientation: narrow ? 'h' : 'v', y: narrow ? -0.25 : 1, traceorder: 'reversed' },
+      legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', traceorder: 'reversed' }, LEG_TOP),
+      margin: { l: 56, r: 16, t: TOP_GAP, b: 48 },
       dragmode: dragFor('emotion', 'zoom')
     }), CONFIG);
     unlockButton('emotion', function () {
@@ -567,14 +572,14 @@
         if (hidden[g]) t.visible = 'legendonly';
         return t;
       }).reverse();
-      var leg = { font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', traceorder: 'reversed',
-                  orientation: narrow ? 'h' : 'v', y: narrow ? -0.2 : 1 };
+      var leg = Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant', traceorder: 'reversed' }, LEG_TOP);
       var ax3 = function (k) { return axis(VAR_LABEL[k], { backgroundcolor: 'rgba(0,0,0,0)', showbackground: false }); };
       var layout = three
         ? base({ margin: { l: 0, r: 0, t: 0, b: 0 }, legend: leg,
                  scene: { bgcolor: 'rgba(0,0,0,0)', aspectmode: 'cube', xaxis: ax3(x), yaxis: ax3(y), zaxis: ax3(z),
                           dragmode: touch && !unlocked.explorer ? false : 'orbit' } })
-        : base({ xaxis: axis(VAR_LABEL[x]), yaxis: axis(VAR_LABEL[y]), legend: leg, dragmode: dragFor('explorer', 'zoom') });
+        : base({ xaxis: axis(VAR_LABEL[x]), yaxis: axis(VAR_LABEL[y]), legend: leg, dragmode: dragFor('explorer', 'zoom'),
+                 margin: { l: 56, r: 16, t: TOP_GAP, b: 48 } });
       Plotly.react(exEl, traces, layout, configFor('explorer', three));
       drawGenreLinks(x, y);
       var xs = [], ys = [];
