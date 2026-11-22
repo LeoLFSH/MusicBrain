@@ -53,9 +53,12 @@
   nav.tracklist ol { list-style: none; margin: 0 auto; padding-block: 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   nav.tracklist a { display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; text-decoration: none; color: var(--label); font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; }
   nav.tracklist a i { font: 500 11px var(--mono); font-style: normal; color: var(--accent); }
-  nav.tracklist a:hover, nav.tracklist a.on { color: var(--ink); border-color: var(--groove); background: var(--sleeve); }
+  nav.tracklist a:hover { color: var(--ink); }
+  nav.tracklist a.on { color: var(--ground); background: var(--ink); border-color: var(--ink); }
+  section.track.off, section.next.off { display: none; }
+  .view-intro { margin: 28px 0 0; }
 
-  section.track { padding-block: 56px 8px; scroll-margin-top: 64px; display: grid; gap: 20px; }
+  section.track { padding-block: 36px 8px; scroll-margin-top: 64px; display: grid; gap: 20px; }
   .track-head { display: grid; gap: 10px; max-width: 70ch; min-width: 0; }
   .side { font: 500 12px/1 var(--mono); letter-spacing: .12em; color: var(--label); text-transform: uppercase; }
   .side b { color: var(--accent); font-weight: 500; }
@@ -137,6 +140,17 @@
   .alike span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .alike small { color: var(--label); }
 
+  .drawer { position: fixed; z-index: 20; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            width: min(380px, calc(100vw - 32px)); max-height: 72vh; overflow: auto; background: var(--sleeve); border: 1px solid var(--groove);
+            border-radius: 14px; padding: 16px 18px; box-shadow: 0 12px 40px rgba(0, 0, 0, .55); display: grid; gap: 10px; }
+  .drawer h3 { font: 600 17px/1.3 var(--body); margin: 0 28px 0 0; }
+  .drawer .by { color: var(--label); font-size: 14px; }
+  .drawer .facts { margin: 4px 0; }
+  .drawer-close { position: absolute; top: 8px; right: 10px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--groove);
+                  background: var(--ground); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+  .drawer .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+  @media (max-width: 600px) { .drawer { left: 8px; right: 8px; width: auto; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); max-height: 60vh; } }
+  .legend-tools .pill { font-size: 12px; padding: 4px 10px; }
   .next { margin-top: 56px; padding-block: 40px; border-top: 1px solid var(--groove); display: grid; gap: 18px; }
   .next ol { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
   .next li { background: var(--sleeve); border: 1px solid var(--groove); border-radius: 10px; padding: 16px; display: grid; gap: 6px; align-content: start; }
@@ -171,28 +185,23 @@
   </header>
 </div>
 
-<nav class="tracklist" aria-label="Sections">
-  <ol class="wrap">
-    <li><a href="#sound"><i>A1</i>Sound</a></li>
-    <li><a href="#clusters"><i>A2</i>Clusters</a></li>
-    <li><a href="#feeling"><i>A3</i>Feeling</a></li>
-    <li><a href="#explore"><i>A4</i>Explore</a></li>
-    <li><a href="#mood"><i>A5</i>Mood</a></li>
-    <li><a href="#listen"><i>A6</i>Search by sound</a></li>
-    <li><a href="#harmony"><i>B1</i>Harmony</a></li>
-    <li><a href="#rhythm"><i>B2</i>Rhythm</a></li>
-    <li><a href="#instruments"><i>B3</i>Instruments</a></li>
-    <li><a href="#time"><i>B4</i>Time</a></li>
-    <li><a href="#history"><i>B5</i>History</a></li>
-    <li><a href="#origins"><i>B6</i>Origins</a></li>
-    <li><a href="#signal"><i>B7</i>One song</a></li>
+<nav class="tracklist" aria-label="Views">
+  <ol class="wrap" role="tablist">
+    <li><a href="#map" data-view="map">Map</a></li>
+    <li><a href="#clusters" data-view="clusters">Clusters</a></li>
+    <li><a href="#feeling" data-view="feeling">Feeling</a></li>
+    <li><a href="#explore" data-view="explore">Explore</a></li>
+    <li><a href="#listen" data-view="listen">Search by sound</a></li>
+    <li><a href="#anatomy" data-view="anatomy">Anatomy</a></li>
+    <li><a href="#history" data-view="history">History</a></li>
+    <li><a href="#origins" data-view="origins">Origins</a></li>
   </ol>
 </nav>
 
 <main class="wrap">
   <section class="track" id="sound">
     <div class="track-head">
-      <div class="side"><b>A1</b> · Sound</div>
+      <div class="side">Sound</div>
       <h2>Taste galaxy</h2>
       <p>Each song becomes 1,280 numbers that describe its sound. UMAP squeezes them onto a flat map where songs that
         sound alike end up as neighbours. The axes have no fixed meaning; only the distances do.</p>
@@ -217,14 +226,14 @@
       <button class="pill" data-color="danceable" aria-pressed="false">Danceability</button>
     </div>
     <div class="chart tall loading" id="galaxy">Loading 3,533 songs…</div>
-    <p class="hint">Legend: click a genre to hide it, double-click to show only that genre, double-click again to bring all back.
+    <p class="hint">Legend: click a genre to hide or show it, or use Show all / Hide all. Double-click a genre to show only that one.
       Drag a box to zoom in, double-click an empty spot to zoom back out.</p>
     <p class="method">Discogs-EffNet embeddings → UMAP (cosine, 20 neighbours). "Sounds like" uses the full 1,280-number embeddings, not the flat map.</p>
   </section>
 
   <section class="track" id="clusters">
     <div class="track-head">
-      <div class="side"><b>A2</b> · Clusters</div>
+      <div class="side">Clusters</div>
       <h2>My taste clusters</h2>
       <p>K-Means groups songs whose sound fingerprints sit close together. I tried every number of clusters from 2 to
         20 and kept the one that is both well separated and reproducible. The names come from what is distinctive in
@@ -253,7 +262,7 @@
 
   <section class="track" id="feeling">
     <div class="track-head">
-      <div class="side"><b>A3</b> · Feeling</div>
+      <div class="side">Feeling</div>
       <h2>Emotion map</h2>
       <p>Every song placed by valence (sad → happy) and arousal (calm → intense) on a 1–9 scale.</p>
       <p class="finding">My library forms a diagonal band: calm songs lean melancholic, intense songs lean happy.
@@ -266,7 +275,7 @@
 
   <section class="track" id="explore">
     <div class="track-head">
-      <div class="side"><b>A4</b> · Explore</div>
+      <div class="side">Explore</div>
       <h2>Sound explorer</h2>
       <p>Pick any two (or three) features and see how my songs spread out. Each dot is a song, coloured by genre.
         Switch to 3D to add a third axis, then drag to rotate.</p>
@@ -291,7 +300,7 @@
 
   <section class="track" id="mood">
     <div class="track-head">
-      <div class="side"><b>A5</b> · Mood</div>
+      <div class="side">Mood</div>
       <h2>Then vs. now</h2>
       <p class="finding">Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
         songs dropped compared with the library as a whole.</p>
@@ -302,7 +311,7 @@
 
   <section class="track" id="listen">
     <div class="track-head">
-      <div class="side"><b>A6</b> · Search by sound</div>
+      <div class="side">Search by sound</div>
       <h2>Describe a sound, find it in my library</h2>
       <p>CLAP was trained on audio paired with text, so a sentence and a song live in the same space: the closer they are,
         the better the song fits the description. Pick a description to see my songs that sound most like it.</p>
@@ -329,7 +338,7 @@
   <section class="track" id="harmony">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>B1</b> · Harmony</div>
+        <div class="side">Harmony</div>
         <h2>Key wheel</h2>
         <p>The key of every song on the circle of fifths, where neighbouring keys sound related. Each slot pairs a
           major key with its relative minor, such as C major and A minor.</p>
@@ -343,7 +352,7 @@
 
   <section class="track" id="rhythm">
     <div class="track-head">
-      <div class="side"><b>B2</b> · Rhythm</div>
+      <div class="side">Rhythm</div>
       <h2>Tempo by genre</h2>
       <p class="finding">Rock is my fastest genre, with a median around 120 BPM. Latin is the slowest, with a peak
         near 90 BPM, the typical reggaeton groove. Hip hop is spread across the whole range.</p>
@@ -355,7 +364,7 @@
 
   <section class="track" id="instruments">
     <div class="track-head">
-      <div class="side"><b>B3</b> · Instruments</div>
+      <div class="side">Instruments</div>
       <h2>What's playing</h2>
       <p class="finding">Drums and bass lead, then guitars. My favourite songs carry more synthesizer and less piano and
         acoustic guitar than the library overall, which matches the move to electronic music.</p>
@@ -364,21 +373,10 @@
     <p class="method">MTG-Jamendo instrument model, 40 instruments · favourites = top 50 in any Spotify period</p>
   </section>
 
-  <section class="track" id="time">
-    <div class="track-head">
-      <div class="side"><b>B4</b> · Time</div>
-      <h2>My music through time</h2>
-      <p class="finding">Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
-        month was October 2023.</p>
-    </div>
-    <div class="chart short loading" id="years">Loading…</div>
-    <div class="chart short loading" id="added">Loading…</div>
-    <p class="method">Spotify release dates and Liked Songs timestamps</p>
-  </section>
 
   <section class="track" id="history">
     <div class="track-head">
-      <div class="side"><b>B5</b> · History</div>
+      <div class="side">History</div>
       <h2>Every play since 2018</h2>
       <p>My full Spotify streaming history: every time a song started, how long it played, and whether I skipped it.
         A stream counts from 30 seconds, as Spotify counts it.</p>
@@ -442,9 +440,21 @@
       IP addresses were dropped at import · moods are minute-weighted Essentia predictions of the songs played</p>
   </section>
 
+  <section class="track" id="time">
+    <div class="track-head">
+      <div class="side">Time</div>
+      <h2>My music through time</h2>
+      <p class="finding">Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
+        month was October 2023.</p>
+    </div>
+    <div class="chart short loading" id="years">Loading…</div>
+    <div class="chart short loading" id="added">Loading…</div>
+    <p class="method">Spotify release dates and Liked Songs timestamps</p>
+  </section>
+
   <section class="track" id="origins">
     <div class="track-head">
-      <div class="side"><b>B6</b> · Origins</div>
+      <div class="side">Origins</div>
       <h2>Where my music comes from</h2>
       <p>Each country is coloured by how many of my songs come from artists born or formed there. Hover a country to
         see who they are.</p>
@@ -458,7 +468,7 @@
   <section class="track" id="signal">
     <div class="split">
       <div class="track-head">
-        <div class="side"><b>B7</b> · One song up close</div>
+        <div class="side">One song up close</div>
         <h2>Song card: Marianne</h2>
         <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
           the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
@@ -486,6 +496,11 @@
     <span>Leonardo Fabián Sánchez · <span id="updated"></span></span>
   </footer>
 </main>
+
+<aside class="drawer" id="drawer" hidden aria-label="Selected song" aria-live="polite">
+  <button type="button" class="drawer-close" id="drawer-close" aria-label="Close the song card">×</button>
+  <div id="drawer-body"></div>
+</aside>
 
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
 <script>
@@ -715,7 +730,7 @@
       }).join('');
       document.getElementById('cl-cards').addEventListener('click', function (e) {
         var b = e.target.closest('[data-song]');
-        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); return; }
+        if (b) { pickSong(+b.dataset.song); return; }
         var sh = e.target.closest('[data-show]');
         if (sh) showClusterOnGalaxy(+sh.dataset.show);
       });
@@ -766,7 +781,7 @@
       var want = CLN[ci] + ' (';
       var vis = gal.data.map(function (t, k) { return k === gal.data.length - 1 || t.name.indexOf(want) === 0 ? true : 'legendonly'; });
       Plotly.restyle(gal, { visible: vis });
-      document.getElementById('sound').scrollIntoView({ block: 'start' });
+      goView('map');
     }
 
     // ---------- A3 emotion map ----------
@@ -910,7 +925,7 @@
       var p = ev.points && top[ev.points[0].pointIndex];
       if (!p) return;
       exX.value = p.x; exY.value = p.y; drawExplorer();
-      document.getElementById('explore').scrollIntoView({ block: 'start' });
+
     });
 
     [exX, exY, exZ].forEach(function (sel) { sel.addEventListener('change', drawExplorer); });
@@ -966,11 +981,11 @@
       unlockButton('clap-map', drawVibe);
       document.getElementById('vibe-list').addEventListener('click', function (e) {
         var b = e.target.closest('[data-song]');
-        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        if (b) { pickSong(+b.dataset.song); }
       });
       mapEl2.on('plotly_click', function (ev) {
         var p = ev.points && ev.points[0];
-        if (p && p.customdata != null) { choose(p.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        if (p && p.customdata != null) { pickSong(p.customdata); }
       });
 
       var PR = CR.profile, groupName = { instrument: 'Instrument', vocals: 'Voice', mood: 'Mood', production: 'Production' };
@@ -1207,7 +1222,7 @@
                    legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)' }, narrow ? LEG_TOP : { x: 1, xanchor: 'right', y: 1 }) }), CONFIG);
         document.getElementById('hist-hidden').on('plotly_click', function (ev) {
           var pnt = ev.points && ev.points[0];
-          if (pnt && pnt.customdata != null) { choose(pnt.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+          if (pnt && pnt.customdata != null) { pickSong(pnt.customdata); }
         });
         var hl = document.getElementById('hidden-list');
         hl.innerHTML = HD.list.map(function (f, n) {
@@ -1216,7 +1231,7 @@
         }).join('');
         hl.addEventListener('click', function (e) {
           var b = e.target.closest('[data-song]');
-          if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+          if (b) { pickSong(+b.dataset.song); }
         });
       }
 
@@ -1360,7 +1375,7 @@
         draw();  // draw first: Plotly adds .on() to a chart only once it has been plotted
         topEl.on('plotly_click', function (ev) {
           var pnt = ev.points && ev.points[0];
-          if (pnt && pnt.customdata != null) { choose(pnt.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+          if (pnt && pnt.customdata != null) { pickSong(pnt.customdata); }
         });
       }).catch(function (e) { console.error(e); ['hist-top', 'hist-hour', 'hist-moodhour'].forEach(function (id) { document.getElementById(id).textContent = 'Could not load the history data: ' + e.message; }); });
 
@@ -1371,7 +1386,7 @@
       }).join('');
       fl.addEventListener('click', function (e) {
         var b = e.target.closest('[data-song]');
-        if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        if (b) { pickSong(+b.dataset.song); }
       });
     }
 
@@ -1423,33 +1438,86 @@
     [gal, emo, exEl].forEach(function (el) {
       el.on('plotly_click', function (ev) {
         var p = ev.points && ev.points[0];
-        if (p && p.customdata != null) { choose(p.customdata); document.getElementById('find').scrollIntoView({ block: 'nearest' }); }
+        if (p && p.customdata != null) { pickSong(p.customdata); }
       });
     });
+    // ---- the small floating song card: opens anywhere, never moves the page
+    var drawer = document.getElementById('drawer'), drawerBody = document.getElementById('drawer-body');
+    function openDrawer(i) {
+      var facts = [G[S.g[i]], CL && S.k[i] != null ? CLN[S.k[i]] : null, S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i],
+                   S.c && S.c[i] != null ? O.name[S.c[i]] : null, S.streams && S.streams[i] ? S.streams[i] + ' streams' : null].filter(Boolean);
+      var meters = ['happy', 'sad', 'danceable', 'electronic'].map(function (m) {
+        var v = Math.round((S[m][i] || 0) * 100);
+        return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + v + '%"></i></span><b>' + v + '%</b></div>';
+      }).join('');
+      var alike = D.neighbours[i].map(function (j, k) {
+        return '<li><button type="button" data-song="' + j + '"><i>' + (k + 1) + '</i><span>' + esc(S.name[j]) + ' <small>' + esc(S.artist[j]) + '</small></span></button></li>';
+      }).join('');
+      drawerBody.innerHTML = '<h3>' + esc(S.name[i]) + '</h3><div class="by">' + esc(S.artist[i]) + '</div>' +
+        '<div class="facts">' + facts.map(function (f) { return '<span class="fact">' + esc(f) + '</span>'; }).join('') + '</div>' +
+        '<div class="meters">' + meters + '</div>' +
+        '<div class="side">Sounds most like</div><ul class="alike">' + alike + '</ul>' +
+        '<div class="links"><a href="https://open.spotify.com/track/' + encodeURIComponent(S.id[i]) + '" target="_blank" rel="noopener">Open in Spotify</a>' +
+        '<button type="button" class="pill" data-show-map="' + i + '">Show on the map</button></div>';
+      drawer.hidden = false;
+    }
+    function pickSong(i) { choose(i); openDrawer(i); }
+    drawer.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-song]'); if (b) { pickSong(+b.dataset.song); return; }
+      var m = e.target.closest('[data-show-map]'); if (m) { choose(+m.dataset.showMap); goView('map'); drawer.hidden = true; }
+    });
+    document.getElementById('drawer-close').addEventListener('click', function () { drawer.hidden = true; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') drawer.hidden = true; });
+    window.pickSong = pickSong;
+
     var start = S.name.indexOf('Marianne');
     if (start >= 0) choose(start);
+
+    // ---- legend tools: show / hide every category at once (double-click on a legend entry still works too)
+    function legendTools(id, noun) {
+      var el = document.getElementById(id), row = document.createElement('div');
+      row.className = 'controls legend-tools';
+      [['Show all ' + noun, true], ['Hide all ' + noun, false]].forEach(function (cfg) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.textContent = cfg[0];
+        b.addEventListener('click', function () {
+          var idx = []; (el.data || []).forEach(function (t, k) { if (t.showlegend !== false && t.name !== 'selected') idx.push(k); });
+          if (idx.length) Plotly.restyle(el, { visible: cfg[1] ? true : 'legendonly' }, idx);
+        });
+        row.appendChild(b);
+      });
+      var hint = document.createElement('span'); hint.className = 'hint'; hint.textContent = 'then click a legend entry to show just that one';
+      row.appendChild(hint);
+      el.parentNode.insertBefore(row, el);
+    }
+    legendTools('galaxy', 'groups'); legendTools('emotion', 'genres'); legendTools('explorer', 'genres');
+    if (D.history && D.history.hidden) legendTools('hist-hidden', 'groups');
   }
 })();
 
-// Highlight the tracklist entry for the section in view
-(function () {
-  var links = Array.prototype.slice.call(document.querySelectorAll('nav.tracklist a'));
-  if (!('IntersectionObserver' in window)) return;
-  var byId = {};
-  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
-  var obs = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      links.forEach(function (a) { a.classList.remove('on'); });
-      var a = byId[e.target.id];
-      if (!a) return;
-      a.classList.add('on');
-      var ol = a.closest('ol');  // keep the active chip visible without scrolling the page itself
-      if (a.offsetLeft < ol.scrollLeft || a.offsetLeft + a.offsetWidth > ol.scrollLeft + ol.clientWidth) ol.scrollLeft = a.offsetLeft - 16;
-    });
-  }, { rootMargin: '-40% 0px -55% 0px' });
-  document.querySelectorAll('section.track').forEach(function (s) { obs.observe(s); });
-})();
+// Views: one group of sections at a time, chosen by the tabs (and by #name in the address, so views can be shared)
+var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'],
+              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['history', 'time'], origins: ['origins'] };
+var SECTION_VIEW = {};
+Object.keys(VIEWS).forEach(function (v) { VIEWS[v].forEach(function (id) { SECTION_VIEW[id] = v; }); });
+function goView(v, keepScroll) {
+  if (!VIEWS[v]) v = SECTION_VIEW[v] || 'map';
+  document.querySelectorAll('section.track').forEach(function (sec) { sec.classList.toggle('off', SECTION_VIEW[sec.id] !== v); });
+  document.querySelectorAll('nav.tracklist a').forEach(function (a) {
+    var on = a.dataset.view === v;
+    a.classList.toggle('on', on); a.setAttribute('aria-selected', String(on));
+    if (on) { var ol = a.closest('ol'); if (a.offsetLeft < ol.scrollLeft || a.offsetLeft + a.offsetWidth > ol.scrollLeft + ol.clientWidth) ol.scrollLeft = a.offsetLeft - 16; }
+  });
+  if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
+  // charts drawn while their view was hidden need their real size now
+  if (window.Plotly) document.querySelectorAll('section.track:not(.off) .js-plotly-plot').forEach(function (el) { Plotly.Plots.resize(el); });
+  var nav = document.querySelector('nav.tracklist');
+  if (!keepScroll && window.scrollY > nav.offsetTop) window.scrollTo({ top: nav.offsetTop, behavior: 'auto' });
+}
+document.querySelectorAll('nav.tracklist a').forEach(function (a) {
+  a.addEventListener('click', function (e) { e.preventDefault(); goView(a.dataset.view); });
+});
+window.addEventListener('hashchange', function () { goView(location.hash.slice(1)); });
+goView(location.hash.slice(1) || 'map', true);
 </script>
 </body>
 </html>
