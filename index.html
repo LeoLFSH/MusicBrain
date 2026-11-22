@@ -26,6 +26,7 @@
     --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.65 var(--body); }
@@ -52,6 +53,9 @@
   nav.tracklist { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(6px); border-block: 1px solid var(--groove); }
   nav.tracklist ol { list-style: none; margin: 0 auto; padding-block: 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   nav.tracklist a { display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; text-decoration: none; color: var(--label); font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; }
+  nav.tracklist li.quick { margin-left: auto; flex: none; }
+  nav.tracklist li.quick input { width: 210px; font: 14px var(--body); color: var(--ink); background: var(--sleeve); border: 1px solid var(--groove);
+                                 border-radius: 999px; padding: 6px 14px; }
   nav.tracklist a i { font: 500 11px var(--mono); font-style: normal; color: var(--accent); }
   nav.tracklist a:hover { color: var(--ink); }
   nav.tracklist a.on { color: var(--ground); background: var(--ink); border-color: var(--ink); }
@@ -195,6 +199,7 @@
     <li><a href="#anatomy" data-view="anatomy">Anatomy</a></li>
     <li><a href="#history" data-view="history">History</a></li>
     <li><a href="#origins" data-view="origins">Origins</a></li>
+    <li class="quick"><input id="quickfind" list="songlist" placeholder="Find a song…" aria-label="Find a song and show it on the charts" autocomplete="off"></li>
   </ol>
 </nav>
 
@@ -872,6 +877,7 @@
         : base({ xaxis: axis(VAR_LABEL[x]), yaxis: axis(VAR_LABEL[y]), legend: leg, dragmode: dragFor('explorer', 'zoom'),
                  margin: { l: 56, r: 16, t: TOP_GAP, b: 48 } });
       Plotly.react(exEl, traces, layout, configFor('explorer', three));
+      if (selected != null && typeof markAll === 'function') markAll();
       drawGenreLinks(x, y);
       var xs = [], ys = [];
       for (var i = 0; i < N; i++) { xs.push(val(x, i)); ys.push(val(y, i)); }
@@ -965,7 +971,8 @@
         traces.push({ type: 'scattergl', mode: 'markers', name: 'matches', x: pick(S.cx, hit), y: pick(S.cy, hit), text: pick(hover, hit),
                       customdata: hit, hovertemplate: '%{text}<extra>match</extra>', showlegend: false,
                       marker: { size: 11, color: 'rgba(0,0,0,0)', line: { color: INK, width: 2 } } });
-        Plotly.react(mapEl2, traces, base({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: dragFor('clap-map', 'zoom'),
+        Plotly.react(mapEl2, traces.concat([highlight(selected != null && S.cx[selected] != null ? [S.cx[selected]] : [], selected != null && S.cx[selected] != null ? [S.cy[selected]] : [])]),
+          base({ margin: { l: 8, r: 8, t: 8, b: 8 }, dragmode: dragFor('clap-map', 'zoom'),
           xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' } }), configFor('clap-map'));
       }
       var vp = document.getElementById('vibe-pills');
@@ -1390,6 +1397,33 @@
       });
     }
 
+    // ---------- the selected song, circled on the other charts ----------
+    function markOn(el, x, y, z) {
+      if (!el || !el.data || !el.data.length) return;
+      var three = el.data[0].type === 'scatter3d', k = -1;
+      el.data.forEach(function (t, n) { if (t.name === 'selected') k = n; });
+      var has = x != null && y != null && (!three || z != null);
+      var tr = three ? { type: 'scatter3d', mode: 'markers', name: 'selected', showlegend: false, hoverinfo: 'skip',
+                         x: has ? [x] : [], y: has ? [y] : [], z: has ? [z] : [], marker: { size: 9, color: INK, symbol: 'diamond' } }
+                     : highlight(has ? [x] : [], has ? [y] : []);
+      if (k < 0) Plotly.addTraces(el, tr);
+      else Plotly.restyle(el, three ? { x: [tr.x], y: [tr.y], z: [tr.z] } : { x: [tr.x], y: [tr.y] }, [k]);
+    }
+    function markAll() {
+      var i = selected;
+      if (i == null) return;
+      if (typeof exEl !== 'undefined' && exEl && exEl.data) {
+        var three = ex3d.getAttribute('aria-pressed') === 'true';
+        markOn(exEl, val(exX.value, i), val(exY.value, i), three ? val(exZ.value, i) : null);
+      }
+      if (D.clap && mapEl2 && mapEl2.data) markOn(mapEl2, S.cx[i], S.cy[i]);
+      var hid = document.getElementById('hist-hidden');
+      if (D.history && D.history.hidden && hid && hid.data) {
+        var sc2 = D.history.hidden.scatter, n = sc2.idx.indexOf(i);
+        markOn(hid, n >= 0 ? sc2.streams[n] : null, n >= 0 ? sc2.skip[n] * 100 : null);
+      }
+    }
+
     // ---------- Song finder ----------
     var labels = S.name.map(function (n, i) { return n + ' — ' + S.artist[i]; });
     var lookup = {}; labels.forEach(function (l, i) { lookup[l.toLowerCase()] = i; });
@@ -1402,6 +1436,7 @@
       selected = i;
       moveGalaxyRing();
       Plotly.restyle(emo, { x: [[S.v[i]]], y: [[S.a[i]]] }, [emoSel]);
+      markAll();
       input.value = labels[i];
       var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
       var inCluster = CL && S.k[i] != null ? 'cluster: ' + CLN[S.k[i]] : null;
@@ -1462,6 +1497,15 @@
       drawer.hidden = false;
     }
     function pickSong(i) { choose(i); openDrawer(i); }
+    var quick = document.getElementById('quickfind');
+    quick.addEventListener('change', function () {
+      var i = lookup[quick.value.trim().toLowerCase()];
+      if (i == null) {
+        var t = quick.value.trim().toLowerCase(); if (!t) return;
+        for (var k = 0; k < N; k++) if (labels[k].toLowerCase().indexOf(t) >= 0) { i = k; break; }
+      }
+      if (i != null) { pickSong(i); quick.value = ''; quick.blur(); }
+    });
     drawer.addEventListener('click', function (e) {
       var b = e.target.closest('[data-song]'); if (b) { pickSong(+b.dataset.song); return; }
       var m = e.target.closest('[data-show-map]'); if (m) { choose(+m.dataset.showMap); goView('map'); drawer.hidden = true; }
