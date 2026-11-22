@@ -106,6 +106,10 @@
   table.years td { padding: 6px 8px; border-bottom: 1px solid var(--groove); vertical-align: top; color: var(--body-ink); }
   table.years td small { color: var(--label); font: 11px var(--mono); }
   table.years td.rank { font: 12px var(--mono); color: var(--accent); }
+  .era-card h3 { font: 700 18px/1.25 var(--display); margin: 0; }
+  .era-card .when { font: 12px var(--mono); color: var(--label); }
+  .era-card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .era-card .up { color: #9CCBEE; } .era-card .down { color: #F0A57E; }
   .forgot { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .pattern .big { font: 500 30px/1.1 var(--mono); color: var(--ink); }
   .pattern table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -379,6 +383,24 @@
     <p class="method">MTG-Jamendo instrument model, 40 instruments · favourites = top 50 in any Spotify period</p>
   </section>
 
+
+  <section class="track" id="eras">
+    <div class="track-head">
+      <div class="side">My music eras · unsupervised learning</div>
+      <h2>The chapters of my listening</h2>
+      <p>Every month of my history became a vector: my mix of taste clusters, the mood of what I played, how much was new to
+        me, and how focused I was on a few artists. A change-point algorithm then cut the timeline into the periods that are
+        most uniform inside. It also chose how many eras there are, so the chapters come from the data, not from me.</p>
+      <p class="finding" id="eras-finding">Loading…</p>
+    </div>
+    <div class="chart mid loading" id="eras-timeline">Loading…</div>
+    <div class="cards" id="eras-cards"></div>
+    <div class="pair">
+      <div class="chart tall loading" id="eras-path">Loading…</div>
+      <div class="chart tall loading" id="eras-mix">Loading…</div>
+    </div>
+    <p class="method" id="eras-method"></p>
+  </section>
 
   <section class="track" id="history">
     <div class="track-head">
@@ -1436,6 +1458,95 @@
       });
     }
 
+    // ---------- music eras ----------
+    var ER = D.eras;
+    if (!ER) {
+      document.getElementById('eras').hidden = true;
+    } else {
+      var eras = ER.eras, eraCol = function (e) { return SERIES[e % SERIES.length]; };
+      var mname = function (m) { var q = m.split('-'); return new Date(+q[0], +q[1] - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+      var moodWord = { valence: 'happier', arousal: 'more energetic', danceable: 'more danceable', acoustic: 'more acoustic', electronic: 'more electronic', sad: 'sadder' };
+      var moodWordDown = { valence: 'less happy', arousal: 'calmer', danceable: 'less danceable', acoustic: 'less acoustic', electronic: 'less electronic', sad: 'less sad' };
+      var longest = eras.slice().sort(function (a, b) { return b.months - a.months; })[0];
+      var maxDisc = eras.slice().sort(function (a, b) { return b.discovery - a.discovery; })[0];
+      document.getElementById('eras-finding').textContent = 'The data finds ' + eras.length + ' eras. The longest, “' + longest.name + '”, lasted ' +
+        longest.months + ' months; I discovered the most new music in “' + maxDisc.name + '” (' + Math.round(maxDisc.discovery * 100) +
+        '% of listening on songs new that month), and today\'s era is the widest: the least focused on a few artists.';
+      var bicBest = ER.candidates.k[ER.candidates.bic.indexOf(Math.min.apply(null, ER.candidates.bic))];
+      document.getElementById('eras-method').textContent = ER.months.length + ' months × 15 features (7 cluster shares, 6 moods, discovery, focus), standardised · ' +
+        'optimal segmentation by dynamic programming, months weighted by √hours, eras of at least 4 months · number of eras chosen by BIC (best: ' + bicBest +
+        '; 3–5 score almost the same, so the big turns are solid and the finer splits are softer) · names are mine, the boundaries are the algorithm\'s';
+
+      // timeline: hours per month, coloured by era, names on top
+      var ann = eras.map(function (e, n) {
+        var i0 = ER.months.indexOf(e.start), i1 = ER.months.indexOf(e.end);
+        return { x: ER.months[Math.round((i0 + i1) / 2)], yref: 'paper', y: 1.02, text: narrow ? String(n + 1) : e.name, showarrow: false,
+                 yanchor: 'bottom', font: { color: INK, size: 11 } };
+      });
+      var shapes = eras.slice(1).map(function (e) {
+        var i = ER.months.indexOf(e.start);
+        return { type: 'line', x0: i - 0.5, x1: i - 0.5, xref: 'x', yref: 'paper', y0: 0, y1: 1, line: { color: GROOVE, width: 1, dash: 'dot' } };
+      });
+      Plotly.newPlot(ready('eras-timeline'), [{
+        type: 'bar', x: ER.months.map(function (m, k) { return k; }), y: ER.hours, marker: { color: ER.era_of_month.map(eraCol) },
+        customdata: ER.months.map(function (m, k) { return [mname(m), eras[ER.era_of_month[k]].name]; }),
+        hovertemplate: '%{customdata[0]}: %{y:.0f} hours<br>%{customdata[1]}<extra></extra>'
+      }], base({ margin: { l: 48, r: 12, t: 40, b: 40 }, bargap: 0.1, shapes: shapes,
+                 annotations: ann.map(function (a) { var o = Object.assign({}, a); o.x = ER.months.indexOf(a.x); return o; }),
+                 xaxis: axis('', { tickvals: ER.months.map(function (m, k) { return k; }).filter(function (k) { return ER.months[k].slice(5) === '01'; }),
+                                   ticktext: ER.months.filter(function (m) { return m.slice(5) === '01'; }).map(function (m) { return m.slice(0, 4); }) }),
+                 yaxis: axis('hours per month') }), CONFIG);
+
+      // cards
+      document.getElementById('eras-cards').innerHTML = eras.map(function (e, n) {
+        var ups = e.cluster_lift.filter(function (c) { return c[1] > 0.02; }).slice(0, 2), downs = e.cluster_lift.filter(function (c) { return c[1] < -0.02; }).slice(-2).reverse();
+        var ms = Object.keys(e.mood_vs_all).map(function (k) { return [k, e.mood_vs_all[k]]; })
+          .filter(function (m) { return Math.abs(m[1]) >= (m[0] === 'valence' || m[0] === 'arousal' ? 0.08 : 0.04); })
+          .sort(function (a, b) { return Math.abs(b[1]) - Math.abs(a[1]); }).slice(0, 3);
+        return '<article class="card era-card"><header><span class="dot" style="background:' + eraCol(n) + '"></span><h3>' + esc(e.name) + '</h3></header>' +
+          '<div class="when">' + mname(e.start) + ' – ' + mname(e.end) + ' · ' + e.months + ' months · ' + fmt(e.hours) + ' h</div>' +
+          (ups.length || downs.length ? '<p>' + ups.map(function (c) { return '<span class="up">▲ ' + esc(c[0]) + '</span>'; }).concat(downs.map(function (c) { return '<span class="down">▼ ' + esc(c[0]) + '</span>'; })).join(' · ') + '</p>' : '') +
+          (ms.length ? '<p class="hint">' + ms.map(function (m) { return m[1] > 0 ? moodWord[m[0]] : moodWordDown[m[0]]; }).join(', ') + ' than my average</p>' : '<p class="hint">close to my average mood</p>') +
+          '<p class="hint">' + Math.round(e.discovery * 100) + '% new songs · ' + Math.round(e.focus * 100) + '% on the month\'s top 10 artists</p>' +
+          '<div class="side">Signature artists</div><div class="tags">' + e.signature.slice(0, 5).map(function (a) { return '<span class="fact">' + esc(a) + '</span>'; }).join('') + '</div>' +
+          (e.new_artists.length ? '<div class="side">Discovered then</div><div class="tags">' + e.new_artists.slice(0, 4).map(function (a) { return '<span class="fact">' + esc(a) + '</span>'; }).join('') + '</div>' : '') +
+          '<div class="side">Most played</div><p>' + e.top_songs.slice(0, 3).map(function (t) { return esc(t[0]) + ' <small class="hint">' + esc(t[1]) + ' · ' + t[2] + '×</small>'; }).join('<br>') + '</p>' +
+          '</article>';
+      }).join('');
+
+      // trajectory through taste space
+      var T2 = ER.trajectory;
+      var side = function (load, positive) {
+        var w = { valence: 'happy', arousal: 'energetic', danceable: 'danceable', acoustic: 'acoustic', electronic: 'electronic', sad: 'sad', discovery: 'new songs', focus: 'focused' };
+        return load.filter(function (l) { return positive ? l[1] > 0 : l[1] < 0; }).slice(0, 2).map(function (l) { return w[l[0]] || l[0]; }).join(', ');
+      };
+      var axTitle = function (load) { var neg = side(load, false), pos = side(load, true); return (neg ? neg : '') + '  ←  →  ' + (pos ? pos : ''); };
+      var pathTr = [{ type: 'scatter', mode: 'lines', x: T2.x, y: T2.y, line: { color: GROOVE, width: 1 }, hoverinfo: 'skip', showlegend: false }];
+      eras.forEach(function (e, n) {
+        var idx = []; ER.era_of_month.forEach(function (v, k) { if (v === n) idx.push(k); });
+        pathTr.push({ type: 'scatter', mode: 'markers', name: e.name, x: pick(T2.x, idx), y: pick(T2.y, idx),
+                      text: idx.map(function (k) { return mname(ER.months[k]) + ' · ' + Math.round(ER.hours[k]) + ' h'; }),
+                      hovertemplate: '%{text}<extra>' + esc(e.name) + '</extra>',
+                      marker: { size: idx.map(function (k) { return 5 + Math.sqrt(ER.hours[k]); }), color: eraCol(n), opacity: 0.85, line: { width: 0.5, color: GROUND } } });
+      });
+      Plotly.newPlot(ready('eras-path'), pathTr, base({ margin: { l: 40, r: 12, t: 36, b: 48 },
+        title: { text: 'My path through taste space, month by month', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+        legend: Object.assign({ font: { color: INK, size: 11 }, bgcolor: 'rgba(0,0,0,0)', orientation: 'h', y: -0.18 }, {}),
+        xaxis: axis(axTitle(T2.axis1), { zeroline: false, showticklabels: false }), yaxis: axis(axTitle(T2.axis2), { zeroline: false, showticklabels: false }) }), CONFIG);
+
+      // cluster mix per month with era boundaries
+      Plotly.newPlot(ready('eras-mix'), ER.cluster_names.map(function (c, ci) {
+        return { type: 'scatter', mode: 'lines', stackgroup: 'one', name: c, x: ER.months.map(function (m, k) { return k; }),
+                 y: ER.cluster_share[ci].map(function (v) { return v == null ? 0 : v * 100; }), line: { width: 0.5, color: SERIES[ci % SERIES.length] },
+                 customdata: ER.months.map(mname), hovertemplate: c + ' · %{customdata}: %{y:.0f}%<extra></extra>' };
+      }), base({ margin: { l: 44, r: 12, t: 36, b: 48 }, shapes: shapes, showlegend: !narrow,
+                 title: { text: 'Taste cluster mix per month, with the era boundaries', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                 legend: { font: { color: INK, size: 10 }, orientation: 'h', y: -0.18 },
+                 xaxis: axis('', { tickvals: ER.months.map(function (m, k) { return k; }).filter(function (k) { return ER.months[k].slice(5) === '01'; }),
+                                   ticktext: ER.months.filter(function (m) { return m.slice(5) === '01'; }).map(function (m) { return m.slice(0, 4); }) }),
+                 yaxis: axis('% of listening', { range: [0, 100] }) }), CONFIG);
+    }
+
     // ---------- ML lab: skip prediction ----------
     var SK = D.skip, skipSec = document.getElementById('skips');
     if (!SK) {
@@ -1648,7 +1759,7 @@
 
 // Views: one group of sections at a time, chosen by the tabs (and by #name in the address, so views can be shared)
 var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'],
-              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['history', 'time'], origins: ['origins'], ml: ['skips'] };
+              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['eras', 'history', 'time'], origins: ['origins'], ml: ['skips'] };
 var SECTION_VIEW = {};
 Object.keys(VIEWS).forEach(function (v) { VIEWS[v].forEach(function (id) { SECTION_VIEW[id] = v; }); });
 function goView(v, keepScroll) {

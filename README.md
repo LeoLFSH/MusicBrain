@@ -17,6 +17,7 @@ analysed by how it sounds, how it feels and where it comes from.
 | Tempo | BPM distribution per genre | Essentia RhythmExtractor2013 |
 | Instruments | 40 instruments detected | MTG-Jamendo instrument model |
 | Time | Release years and when songs were saved | Spotify Web API |
+| Music eras | The chapters of my listening: months as vectors (cluster mix, moods, discovery, focus), optimal change-point segmentation, number of eras by BIC, taste trajectory | dynamic programming, PCA |
 | History | Every play since 2018: weekly calendar, time of day, taste clusters over time, top artists per year, forgotten favourites | Spotify Extended Streaming History (IP addresses dropped) |
 | ML lab: skip prediction | Will I skip a song? Logistic regression vs gradient boosting vs MLP on 174k plays, time-based split, calibration, feature-family importance, and two data-leakage lessons | scikit-learn, Spotify streaming history |
 | Origins | World map of where my artists were born or formed | MusicBrainz (via ISRC), Last.fm tags |
