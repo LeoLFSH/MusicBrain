@@ -100,6 +100,12 @@
   table.years td small { color: var(--label); font: 11px var(--mono); }
   table.years td.rank { font: 12px var(--mono); color: var(--accent); }
   .forgot { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .pattern .big { font: 500 30px/1.1 var(--mono); color: var(--ink); }
+  .pattern table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .pattern td, .pattern th { padding: 4px 6px; border-bottom: 1px solid var(--groove); text-align: right; color: var(--body-ink); }
+  .pattern th { font: 500 11px var(--mono); color: var(--label); }
+  .pattern td:first-child, .pattern th:first-child { text-align: left; }
+  .pattern .chart { border: 0; height: 190px; }
   .scrollx { overflow-x: auto; }
   #vibe-pills .pill { font-size: 13px; }
   .subhead h3 { font: 700 clamp(18px, 2.4vw, 22px)/1.25 var(--display); margin: 0; text-wrap: balance; }
@@ -380,23 +386,60 @@
     </div>
     <div class="stats" id="hist-stats"></div>
     <div class="scrollx"><div class="chart loading" id="hist-weekly" style="min-width:720px;height:340px">Loading…</div></div>
+    <div class="track-head subhead">
+      <div class="side">Pick a period</div>
+      <h3>My top artists and songs, and when I listen</h3>
+      <p>Everything in this block follows the period you pick: all time, one year, the last 12 months, or any range of months.</p>
+    </div>
+    <div class="controls" id="range-presets" role="group" aria-label="Period"></div>
+    <div class="controls explorer">
+      <label class="label" for="range-from">From</label><select id="range-from"></select>
+      <label class="label" for="range-to">To</label><select id="range-to"></select>
+      <span class="hint" id="range-summary"></span>
+    </div>
+    <div class="controls" role="group" aria-label="Show">
+      <button class="pill" data-top="artists" aria-pressed="true">Artists</button>
+      <button class="pill" data-top="songs" aria-pressed="false">Songs</button>
+    </div>
     <div class="pair">
-      <div class="chart mid loading" id="hist-hour">Loading…</div>
+      <div class="chart tall loading" id="hist-top">Loading…</div>
+      <div class="chart tall loading" id="hist-hour">Loading…</div>
+    </div>
+    <div class="pair">
+      <div class="chart mid loading" id="hist-moodhour">Loading…</div>
       <div class="chart mid loading" id="hist-taste">Loading…</div>
     </div>
     <div class="track-head subhead">
-      <div class="side">Top artists, year by year</div>
-      <h3>Who I listened to most each year</h3>
+      <div class="side">Year by year</div>
+      <h3>Who and what I listened to most each year</h3>
+    </div>
+    <div class="controls" role="group" aria-label="Table shows">
+      <button class="pill" data-years="artists" aria-pressed="true">Artists</button>
+      <button class="pill" data-years="songs" aria-pressed="false">Songs</button>
     </div>
     <div class="scrollx"><table class="years" id="hist-years"></table></div>
+    <div class="track-head subhead">
+      <div class="side">Hidden favourites</div>
+      <h3>Songs I play a lot but never saved</h3>
+      <p id="hidden-finding">Loading…</p>
+    </div>
+    <div class="pair">
+      <div class="chart tall loading" id="hist-hidden">Loading…</div>
+      <ul class="alike" id="hidden-list"></ul>
+    </div>
     <div class="track-head subhead">
       <div class="side">Forgotten favourites</div>
       <h3>Songs I played a lot, then stopped</h3>
       <p>At least 25 streams, and not played in the last 12 months.</p>
     </div>
     <ul class="alike forgot" id="hist-forgot"></ul>
+    <div class="track-head subhead">
+      <div class="side">Patterns</div>
+      <h3>What my listening says about me</h3>
+    </div>
+    <div class="cards" id="patterns"></div>
     <p class="method">Spotify Extended Streaming History · local time from the country of each play (US plays in Central time) ·
-      IP addresses were dropped at import</p>
+      IP addresses were dropped at import · moods are minute-weighted Essentia predictions of the songs played</p>
   </section>
 
   <section class="track" id="origins">
@@ -1112,13 +1155,6 @@
                                    ticktext: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], showgrid: false }),
                  yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK }, type: 'category', dtick: 1 }) }), CONFIG);
 
-      Plotly.newPlot(ready('hist-hour'), [{
-        type: 'heatmap', z: H.hourweek, x: H.hourweek[0].map(function (v, h) { return h; }), y: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        colorscale: ramp, xgap: 1, ygap: 1, showscale: false, hovertemplate: '%{y} %{x}:00 · %{z:.0f} hours in total<extra></extra>'
-      }], base({ margin: { l: 44, r: 12, t: 36, b: 40 },
-                 title: { text: 'When I listen (local time)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
-                 xaxis: axis('hour of the day', { dtick: 3, showgrid: false }), yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK } }) }), CONFIG);
-
       var T = H.taste;
       Plotly.newPlot(ready('hist-taste'), T.clusters.map(function (c, ci) {
         var k = CLN.indexOf(c);
@@ -1129,15 +1165,204 @@
                  legend: { font: { color: INK, size: 10 }, orientation: 'h', y: -0.18 },
                  xaxis: axis('', { showgrid: false, nticks: 8 }), yaxis: axis('%', { range: [0, 100] }) }), CONFIG);
 
-      var maxRows = 5;
-      var head = '<tr><th></th>' + H.top_years.map(function (y) { return '<th>' + y.year + '<br><small>' + fmt(y.hours) + ' h</small></th>'; }).join('') + '</tr>';
-      var body = '';
-      for (var rr = 0; rr < maxRows; rr++) {
-        body += '<tr><td class="rank">' + (rr + 1) + '</td>' + H.top_years.map(function (y) {
-          var a = y.artists[rr]; return '<td>' + (a ? esc(a[0]) + '<br><small>' + a[1] + ' h</small>' : '') + '</td>';
-        }).join('') + '</tr>';
+      // ---- year-by-year table (artists from library.json, songs from history.json)
+      var yearsMode = 'artists', songYears = null;
+      function drawYears() {
+        var rows = yearsMode === 'artists' ? H.top_years.map(function (y) { return { year: y.year, hours: y.hours, items: y.artists.map(function (a) { return [a[0], a[1] + ' h']; }) }; })
+          : (songYears || []);
+        var head = '<tr><th></th>' + rows.map(function (y) { return '<th>' + y.year + '<br><small>' + fmt(y.hours) + ' h</small></th>'; }).join('') + '</tr>';
+        var body = '';
+        for (var rr = 0; rr < 5; rr++) {
+          body += '<tr><td class="rank">' + (rr + 1) + '</td>' + rows.map(function (y) {
+            var a = y.items[rr]; return '<td>' + (a ? esc(a[0]) + '<br><small>' + esc(a[1]) + '</small>' : '') + '</td>';
+          }).join('') + '</tr>';
+        }
+        document.getElementById('hist-years').innerHTML = head + body;
       }
-      document.getElementById('hist-years').innerHTML = head + body;
+      document.querySelectorAll('[data-years]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          yearsMode = b.dataset.years;
+          document.querySelectorAll('[data-years]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+          drawYears();
+        });
+      });
+      drawYears();
+
+      // ---- hidden favourites
+      var HD = H.hidden, ST = { liked: ['In Liked Songs', SERIES[0]], library: ['Only in a playlist', SERIES[1]], none: ['Not in my library', OTHER] };
+      if (HD) {
+        document.getElementById('hidden-finding').textContent = HD.top100_not_liked + ' of my 100 most-streamed songs are not in Liked Songs. ' +
+          'Across the ' + fmt(HD.n) + ' songs I streamed at least 15 times, playing a song more goes with skipping it slightly less ' +
+          '(correlation between log-streams and skip rate: ' + HD.corr_log_streams_skip.toFixed(2) + '). For the recommender, play counts are a taste signal that saving misses.';
+        var sc = HD.scatter;
+        Plotly.newPlot(ready('hist-hidden'), ['liked', 'library', 'none'].map(function (st) {
+          var idx = []; sc.status.forEach(function (v, n) { if (v === st) idx.push(n); });
+          return { type: 'scattergl', mode: 'markers', name: ST[st][0], x: pick(sc.streams, idx), y: idx.map(function (n) { return sc.skip[n] * 100; }),
+                   text: pick(sc.label, idx), customdata: idx.map(function (n) { return sc.idx[n]; }),
+                   hovertemplate: '%{text}<br>%{x} streams · %{y:.0f}% skipped<extra>' + ST[st][0] + '</extra>',
+                   marker: { size: 6, color: ST[st][1], opacity: 0.75, line: { width: 0.4, color: GROUND } } };
+        }), base({ margin: { l: 52, r: 12, t: 36, b: 48 }, dragmode: dragFor('hist-hidden', 'zoom'),
+                   title: { text: 'Streams vs skip rate (songs streamed 15+ times)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                   xaxis: axis('streams (log scale)', { type: 'log' }), yaxis: axis('% of plays skipped'),
+                   legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)' }, narrow ? LEG_TOP : { x: 1, xanchor: 'right', y: 1 }) }), CONFIG);
+        document.getElementById('hist-hidden').on('plotly_click', function (ev) {
+          var pnt = ev.points && ev.points[0];
+          if (pnt && pnt.customdata != null) { choose(pnt.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        });
+        var hl = document.getElementById('hidden-list');
+        hl.innerHTML = HD.list.map(function (f, n) {
+          var inner = '<i>' + (n + 1) + '</i><span>' + esc(f.track) + ' <small>' + esc(f.artist) + ' · ' + f.streams + ' streams · ' + ST[f.status][0].toLowerCase() + '</small></span>';
+          return '<li>' + (f.idx != null ? '<button type="button" data-song="' + f.idx + '">' + inner + '</button>' : '<button type="button" disabled>' + inner + '</button>') + '</li>';
+        }).join('');
+        hl.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-song]');
+          if (b) { choose(+b.dataset.song); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        });
+      }
+
+      // ---- patterns
+      var P = H.patterns;
+      if (P) {
+        var pctf = function (v) { return Math.round(v * 100) + '%'; };
+        var night = P.by_slot[0], aft = P.by_slot[2];
+        var y0 = P.by_year[0], yN = P.by_year[P.by_year.length - 1];
+        var acPeak = P.by_year.slice().sort(function (a, b) { return b.acoustic - a.acoustic; })[0];
+        var disc = P.discovery, dmax = disc.songs.indexOf(Math.max.apply(null, disc.songs));
+        var cards = [
+          { t: 'My music ignores the clock', body: '<p>At night my music is barely sadder than in the afternoon (' + pctf(night.sad) + ' vs ' + pctf(aft.sad) +
+              ' sad), and tempo stays around ' + aft.bpm + ' BPM all day. No night mode, no party weekend.</p><table><tr><th></th><th>valence</th><th>energy</th><th>sad</th><th>dance</th></tr>' +
+              P.by_slot.map(function (r) { return '<tr><td>' + r.name + ' <small>' + r.hours + '</small></td><td>' + r.valence.toFixed(2) + '</td><td>' + r.arousal.toFixed(2) + '</td><td>' + pctf(r.sad) + '</td><td>' + pctf(r.danceable) + '</td></tr>'; }).join('') + '</table>' },
+          { t: 'But my taste moves over the years', chart: 'pat-years', body: '<p>Acoustic peaked in ' + acPeak.year + ' (' + pctf(acPeak.acoustic) + '); in ' + yN.year + ' electronic (' +
+              pctf(yN.electronic) + ') overtook acoustic (' + pctf(yN.acoustic) + ').</p>' },
+          { t: 'What I skip most', chart: 'pat-skip', body: '<p>' + esc(P.skip_by_cluster[P.skip_by_cluster.length - 1][0]) + ' gets skipped most (' +
+              pctf(P.skip_by_cluster[P.skip_by_cluster.length - 1][1]) + '), ' + esc(P.skip_by_cluster[0][0]) + ' least (' + pctf(P.skip_by_cluster[0][1]) + ').</p>' },
+          { t: 'A steady explorer', chart: 'pat-disc', body: '<p>Every year I stream thousands of songs for the first time; most in ' + disc.years[dmax] + ' (' + fmt(disc.songs[dmax]) + ').</p>' },
+          { t: 'How a play starts', body: '<div class="big">' + pctf(P.starts.trackdone) + '</div><p>start because the previous song ended. ' + pctf(P.starts.clickrow) +
+              ' because I picked the song, ' + pctf(P.starts.fwdbtn) + ' after skipping one. Shuffle is on for ' + pctf(P.starts.shuffle) + ' of plays.</p>' },
+          { t: 'Records', body: '<div class="big">' + P.streak.days + ' days</div><p>in a row with music, ' + P.streak.from + ' → ' + P.streak.to + '.</p>' +
+              P.repeats.slice(0, 2).map(function (r) { return '<p><b>' + r.streams + '×</b> ' + esc(r.track) + ' (' + esc(r.artist) + ') on ' + r.date + '</p>'; }).join('') }
+        ];
+        document.getElementById('patterns').innerHTML = cards.map(function (c) {
+          return '<article class="card pattern"><h3>' + c.t + '</h3>' + c.body + (c.chart ? '<div class="chart" id="' + c.chart + '"></div>' : '') + '</article>';
+        }).join('');
+        var mini = function (extra) { return base(Object.assign({ margin: { l: 40, r: 8, t: 8, b: 28 }, showlegend: false }, extra)); };
+        Plotly.newPlot('pat-years', [
+          { type: 'scatter', mode: 'lines+markers', name: 'acoustic', x: P.by_year.map(function (r) { return r.year; }), y: P.by_year.map(function (r) { return r.acoustic * 100; }),
+            line: { color: SERIES[2], width: 2 }, hovertemplate: '%{x}: %{y:.0f}% acoustic<extra></extra>' },
+          { type: 'scatter', mode: 'lines+markers', name: 'electronic', x: P.by_year.map(function (r) { return r.year; }), y: P.by_year.map(function (r) { return r.electronic * 100; }),
+            line: { color: SERIES[0], width: 2 }, hovertemplate: '%{x}: %{y:.0f}% electronic<extra></extra>' }
+        ], mini({ showlegend: true, legend: { orientation: 'h', y: 1.15, font: { color: INK, size: 11 } }, xaxis: axis('', { dtick: 2 }), yaxis: axis('%') }), CONFIG);
+        Plotly.newPlot('pat-skip', [{ type: 'bar', orientation: 'h', y: P.skip_by_cluster.map(function (r) { return r[0]; }), x: P.skip_by_cluster.map(function (r) { return r[1] * 100; }),
+          marker: { color: P.skip_by_cluster.map(function (r) { return SERIES[CLN.indexOf(r[0]) % SERIES.length]; }) }, hovertemplate: '%{y}: %{x:.0f}% skipped<extra></extra>' }],
+          mini({ margin: { l: 150, r: 8, t: 8, b: 28 }, xaxis: axis('% skipped'), yaxis: axis('', { tickfont: { color: INK, size: 10 } }) }), CONFIG);
+        Plotly.newPlot('pat-disc', [{ type: 'bar', x: disc.years, y: disc.songs, marker: { color: '#4F9BE8' }, hovertemplate: '%{x}: %{y} new songs<extra></extra>' }],
+          mini({ xaxis: axis('', { dtick: 1 }), yaxis: axis('') }), CONFIG);
+      }
+
+      // ---- the period picker (data/history.json is loaded separately to keep the page fast)
+      fetch('data/history.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (R) {
+        var M = R.months, from = 0, to = M.length - 1, topMode = 'artists';
+        var monthName = function (m) { var p = M[m].split('-'); return new Date(+p[0], +p[1] - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+        var selFrom = document.getElementById('range-from'), selTo = document.getElementById('range-to');
+        M.forEach(function (m, n) {
+          [selFrom, selTo].forEach(function (sel) { var o = document.createElement('option'); o.value = n; o.textContent = monthName(n); sel.appendChild(o); });
+        });
+        // song-by-year table for the "Songs" switch
+        var yearOf = M.map(function (m) { return +m.slice(0, 4); }), byYear = {};
+        R.sm.forEach(function (t) { var y = yearOf[t[1]]; (byYear[y] = byYear[y] || {})[t[0]] = (byYear[y][t[0]] || 0) + t[2]; });
+        songYears = H.top_years.map(function (y) {
+          var m = byYear[y.year] || {};
+          var best = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; }).slice(0, 5);
+          return { year: y.year, hours: y.hours, items: best.map(function (k) { return [R.songs[k][0], R.songs[k][1] + ' · ' + m[k] + '×']; }) };
+        });
+        if (yearsMode === 'songs') drawYears();
+
+        var topEl = ready('hist-top'), hourEl = ready('hist-hour'), moodEl = ready('hist-moodhour');
+        var days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'All days'];
+        var ramp2 = [[0, '#16191C'], [0.15, '#0D2F47'], [0.45, '#1D6596'], [0.75, '#7DB8E4'], [1, '#EEF3F7']];
+        function draw() {
+          var a = new Float64Array(R.artists.length), sg = new Float64Array(R.songs.length), hw = new Float64Array(168), md = new Float64Array(72), total = 0;
+          R.am.forEach(function (t) { if (t[1] >= from && t[1] <= to) a[t[0]] += t[2]; });
+          R.sm.forEach(function (t) { if (t[1] >= from && t[1] <= to) sg[t[0]] += t[2]; });
+          for (var m = from; m <= to; m++) {
+            R.hw[m].forEach(function (v, k) { hw[k] += v; total += v; });
+            R.mood[m].forEach(function (v, k) { md[k] += v; });
+          }
+          // top 15
+          var src = topMode === 'artists' ? a : sg, order = Array.prototype.slice.call(src).map(function (v, k) { return k; })
+            .filter(function (k) { return src[k] > 0; }).sort(function (x, y) { return src[y] - src[x]; }).slice(0, 15).reverse();
+          var lab = order.map(function (k) { return topMode === 'artists' ? R.artists[k] : R.songs[k][0] + ' · ' + R.songs[k][1]; });
+          Plotly.react(topEl, [{
+            type: 'bar', orientation: 'h', y: lab.map(function (l) { return l.length > 42 ? l.slice(0, 40) + '…' : l; }),
+            x: order.map(function (k) { return topMode === 'artists' ? src[k] / 60 : src[k]; }),
+            customdata: order.map(function (k) { return topMode === 'songs' ? R.songs[k][3] : null; }), text: lab,
+            marker: { color: topMode === 'artists' ? '#4F9BE8' : SERIES[2] },
+            hovertemplate: '%{text}: %{x:,.0f}' + (topMode === 'artists' ? ' hours' : ' streams') + '<extra></extra>'
+          }], base({ margin: { l: narrow ? 150 : 230, r: 16, t: 36, b: 40 }, bargap: 0.25,
+                     title: { text: 'Top 15 ' + topMode + ' · ' + monthName(from) + ' – ' + monthName(to), x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                     xaxis: axis(topMode === 'artists' ? 'hours' : 'streams'), yaxis: axis('', { tickfont: { color: INK, size: 11 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+          // hour x weekday + "All days" average
+          var z = [];
+          for (var d = 0; d < 7; d++) z.push(Array.prototype.slice.call(hw, d * 24, d * 24 + 24).map(function (v) { return v / 60; }));
+          z.push(z[0].map(function (v, h) { var t = 0; for (var d2 = 0; d2 < 7; d2++) t += z[d2][h]; return t / 7; }));
+          Plotly.react(hourEl, [{
+            type: 'heatmap', z: z, x: z[0].map(function (v, h) { return h; }), y: days, colorscale: ramp2, xgap: 1, ygap: 1, showscale: false,
+            hovertemplate: '%{y} %{x}:00 · %{z:.0f} hours<extra></extra>'
+          }], base({ margin: { l: 60, r: 12, t: 36, b: 40 },
+                     title: { text: 'When I listen (bottom row: average day)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                     shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 6.5, y1: 6.5, line: { color: INK, width: 1.5 } }],
+                     xaxis: axis('hour of the day', { dtick: 3, showgrid: false }), yaxis: axis('', { autorange: 'reversed', showgrid: false, tickfont: { color: INK } }) }), CONFIG);
+          // mood by hour
+          var hrs = [], sad = [], dance = [];
+          for (var hh = 0; hh < 24; hh++) {
+            var mins = md[hh * 3]; hrs.push(hh);
+            sad.push(mins ? md[hh * 3 + 1] / mins * 100 : null); dance.push(mins ? md[hh * 3 + 2] / mins * 100 : null);
+          }
+          Plotly.react(moodEl, [
+            { type: 'scatter', mode: 'lines+markers', name: 'sad', x: hrs, y: sad, line: { color: SERIES[0], width: 2 }, hovertemplate: '%{x}:00 · %{y:.0f}% sad<extra></extra>' },
+            { type: 'scatter', mode: 'lines+markers', name: 'danceable', x: hrs, y: dance, line: { color: SERIES[1], width: 2 }, hovertemplate: '%{x}:00 · %{y:.0f}% danceable<extra></extra>' }
+          ], base({ margin: { l: 44, r: 12, t: 36, b: 40 },
+                    title: { text: 'Mood by hour, this period', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                    legend: { orientation: 'h', y: -0.2, font: { color: INK } },
+                    xaxis: axis('hour of the day', { dtick: 3 }), yaxis: axis('% (minute-weighted)') }), CONFIG);
+          var peakH = z[7].indexOf(Math.max.apply(null, z[7]));
+          var topA = a.indexOf(Math.max.apply(null, a));
+          document.getElementById('range-summary').textContent = fmt(Math.round(total / 60)) + ' hours · busiest hour ' + peakH + ':00 · top artist ' + R.artists[topA];
+          selFrom.value = from; selTo.value = to;
+        }
+        var presets = document.getElementById('range-presets');
+        var addPreset = function (label, f, t) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.textContent = label;
+          b.setAttribute('aria-pressed', String(f === 0 && t === M.length - 1 && label === 'All time'));
+          b.addEventListener('click', function () {
+            from = f; to = t; presets.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); draw();
+          });
+          presets.appendChild(b);
+        };
+        addPreset('All time', 0, M.length - 1);
+        H.top_years.forEach(function (y) {
+          var f = M.findIndex(function (m) { return +m.slice(0, 4) === y.year; }), t = M.length - 1 - M.slice().reverse().findIndex(function (m) { return +m.slice(0, 4) === y.year; });
+          if (f >= 0) addPreset(String(y.year), f, t);
+        });
+        addPreset('Last 12 months', Math.max(0, M.length - 12), M.length - 1);
+        [selFrom, selTo].forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            from = Math.min(+selFrom.value, +selTo.value); to = Math.max(+selFrom.value, +selTo.value);
+            presets.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', 'false'); }); draw();
+          });
+        });
+        document.querySelectorAll('[data-top]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            topMode = b.dataset.top;
+            document.querySelectorAll('[data-top]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); draw();
+          });
+        });
+        topEl.on('plotly_click', function (ev) {
+          var pnt = ev.points && ev.points[0];
+          if (pnt && pnt.customdata != null) { choose(pnt.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
+        });
+        draw();
+      }).catch(function (e) { console.error(e); ['hist-top', 'hist-hour', 'hist-moodhour'].forEach(function (id) { document.getElementById(id).textContent = 'Could not load the history data: ' + e.message; }); });
 
       var fl = document.getElementById('hist-forgot');
       fl.innerHTML = H.forgotten.map(function (f, n) {
