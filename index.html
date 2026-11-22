@@ -1357,11 +1357,11 @@
             document.querySelectorAll('[data-top]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); draw();
           });
         });
+        draw();  // draw first: Plotly adds .on() to a chart only once it has been plotted
         topEl.on('plotly_click', function (ev) {
           var pnt = ev.points && ev.points[0];
           if (pnt && pnt.customdata != null) { choose(pnt.customdata); document.getElementById('find').scrollIntoView({ block: 'center' }); }
         });
-        draw();
       }).catch(function (e) { console.error(e); ['hist-top', 'hist-hour', 'hist-moodhour'].forEach(function (id) { document.getElementById(id).textContent = 'Could not load the history data: ' + e.message; }); });
 
       var fl = document.getElementById('hist-forgot');
