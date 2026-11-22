@@ -110,6 +110,11 @@
   .era-card .when { font: 12px var(--mono); color: var(--label); }
   .era-card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .era-card .up { color: #9CCBEE; } .era-card .down { color: #F0A57E; }
+  .recrow { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; padding: 6px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+  .recrow:hover, .recrow:focus-visible { background: var(--sleeve); outline: 1px solid var(--groove); }
+  .recrow i { font: 12px var(--mono); font-style: normal; color: var(--accent); }
+  .recrow small { color: var(--label); }
+  #rec-list { max-height: 520px; overflow: auto; }
   .forgot { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .pattern .big { font: 500 30px/1.1 var(--mono); color: var(--ink); }
   .pattern table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -530,6 +535,23 @@
         <span id="skip-honest">0.82</span>. Both times, the evaluation design caught it before any conclusion was drawn.</p>
     </div>
     <p class="method" id="skip-method"></p>
+  </section>
+
+  <section class="track" id="discover">
+    <div class="track-head">
+      <div class="side">ML lab · recommender</div>
+      <h2>New music, picked by my taste model</h2>
+      <p>Candidates come from outside my library: songs Last.fm finds similar to my favourites, top songs of related
+        artists, and the charts of my clusters' styles. Every candidate gets the same audio analysis as my library. A taste
+        model scores them, then the list is picked so that each song is also unlike the ones before it, with a bonus for
+        artists I don't know yet.</p>
+      <p class="finding" id="rec-finding">Loading…</p>
+    </div>
+    <div class="pair">
+      <div class="chart mid loading" id="rec-eval">Loading…</div>
+      <ul class="alike" id="rec-list"></ul>
+    </div>
+    <p class="method" id="rec-method"></p>
   </section>
 
   <section class="track" id="signal">
@@ -1579,6 +1601,43 @@
                  yaxis: axis('% of listening', { range: [0, 100] }) }), CONFIG);
     }
 
+    // ---------- ML lab: recommender ----------
+    var RC = D.recommender;
+    if (!RC) {
+      document.getElementById('discover').hidden = true;
+    } else {
+      var EVW = RC.evaluation && RC.evaluation.world, EVT = RC.evaluation && RC.evaluation.targeted;
+      var mlabel = { random: 'Random', centroid: 'Cluster centres', knn: 'Nearest songs (kNN)', mlp: 'Neural network', ensemble: 'kNN + network' };
+      var mods = ['random', 'knn', 'centroid', 'ensemble', 'mlp'].filter(function (m) { return EVW && EVW[m]; });
+      if (EVW) {
+        document.getElementById('rec-finding').textContent = 'To test the models honestly, all songs of some favourite artists were hidden, then each model had to find them ' +
+          'among chart songs of every genre. The ' + (mlabel[RC.model] || RC.model).toLowerCase() + ' did best (AUC ' + EVW[RC.model].auc[0].toFixed(2) +
+          ', random 0.50), so it ranks the list.' + (EVW.knn && EVW.knn.auc[0] < 0.5 ? ' "Sounds like one of my songs" (kNN) did worse than random: ' +
+          'without the same artist to lean on, the closest songs to my favourites are the candidates themselves, which were picked for being close.' : '');
+        Plotly.newPlot(ready('rec-eval'), [
+          { type: 'bar', orientation: 'h', name: 'vs chart songs of every genre', y: mods.map(function (m) { return mlabel[m]; }), x: mods.map(function (m) { return EVW[m].auc[0]; }),
+            error_x: { type: 'data', array: mods.map(function (m) { return EVW[m].auc[1]; }), color: LABEL }, marker: { color: '#4F9BE8' },
+            hovertemplate: '%{y}: AUC %{x:.3f}<extra>vs the world</extra>' },
+          { type: 'bar', orientation: 'h', name: 'vs the targeted candidates', y: mods.map(function (m) { return mlabel[m]; }), x: mods.map(function (m) { return EVT[m].auc[0]; }),
+            error_x: { type: 'data', array: mods.map(function (m) { return EVT[m].auc[1]; }), color: LABEL }, marker: { color: SERIES[2] },
+            hovertemplate: '%{y}: AUC %{x:.3f}<extra>vs targeted candidates</extra>' }
+        ], base({ barmode: 'group', margin: { l: 150, r: 16, t: 36, b: 60 },
+                  title: { text: 'Finding hidden favourite artists (AUC, 5 folds)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                  shapes: [{ type: 'line', x0: 0.5, x1: 0.5, yref: 'paper', y0: 0, y1: 1, line: { color: INK, width: 1, dash: 'dot' } }],
+                  xaxis: axis('AUC (0.5 = random)', { range: [0.3, 0.8] }), yaxis: axis('', { tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }),
+                  legend: { orientation: 'h', y: -0.22, font: { color: INK } } }), CONFIG);
+      } else {
+        document.getElementById('rec-eval').hidden = true;
+      }
+      document.getElementById('rec-list').innerHTML = '<li class="side">Discover · ' + esc(RC.date || '') + '</li>' + RC.list.map(function (r, n) {
+        return '<li><a class="recrow" href="https://www.deezer.com/track/' + r.deezer_id + '" target="_blank" rel="noopener"><i>' + (n + 1) + '</i><span>' + esc(r.name) +
+          ' <small>' + esc(r.artist) + (r.new_artist ? ' · new artist' : '') + ' · because of ' + esc(String(r.because).split(' – ')[0]) + '</small></span></a></li>';
+      }).join('');
+      document.getElementById('rec-method').textContent = fmt(RC.candidates || 0) + ' candidates (incl. a control group of chart songs, never recommended) · ' +
+        fmt(RC.library || 0) + ' library songs, weighted by Spotify top lists, Liked Songs and play counts · Essentia + CLAP embeddings → PCA · ' +
+        'cross-fitted PyTorch network (in → 128 → 32 → 1) · MMR diversity · links open the 30 s preview on Deezer';
+    }
+
     // ---------- ML lab: skip prediction ----------
     var SK = D.skip, skipSec = document.getElementById('skips');
     if (!SK) {
@@ -1791,7 +1850,7 @@
 
 // Views: one group of sections at a time, chosen by the tabs (and by #name in the address, so views can be shared)
 var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'],
-              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['eras', 'history', 'time'], origins: ['origins'], ml: ['skips'] };
+              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['eras', 'history', 'time'], origins: ['origins'], ml: ['discover', 'skips'] };
 var SECTION_VIEW = {};
 Object.keys(VIEWS).forEach(function (v) { VIEWS[v].forEach(function (id) { SECTION_VIEW[id] = v; }); });
 function goView(v, keepScroll) {
