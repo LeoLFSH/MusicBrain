@@ -171,18 +171,19 @@
 
 <div class="cover">
   <div class="band" role="img" aria-label="Mel spectrogram of the song Marianne by Fontaines D.C."></div>
-  <span class="credit">mel spectrogram · Fontaines D.C. – Marianne · 0–30 s</span>
+  <span class="credit" id="cover-credit">mel spectrogram · Fontaines D.C. – Marianne · 0–30 s</span>
 </div>
 
 <div class="wrap">
   <header class="intro">
-    <div class="kicker">MusicBrain · personal machine-learning project</div>
-    <h1>What my music sounds like</h1>
-    <p class="lead">I mapped my whole Spotify library by how it sounds, how it feels and where it comes from. Each song's
+    <div class="kicker" id="kicker">MusicBrain · personal machine-learning project</div>
+    <h1 id="title">What my music sounds like</h1>
+    <p class="lead" data-personal>I mapped my whole Spotify library by how it sounds, how it feels and where it comes from. Each song's
       30-second preview went through machine-learning audio models, then got combined with data from Spotify,
       Last.fm, Discogs and MusicBrainz.</p>
     <p>The goal is a recommender that finds music beyond "fans also like": K-Means taste clusters, a small neural
       network, and proper validation. Every chart below is live: hover a dot to see the song, click a genre to hide it.</p>
+    <p class="lead" id="lead-generic" hidden></p>
     <div class="stats">
       <div class="stat"><b id="st-songs">3,751</b><span>songs in the library</span></div>
       <div class="stat"><b id="st-artists">1,862</b><span>artists</span></div>
@@ -215,7 +216,7 @@
       <h2>Taste galaxy</h2>
       <p>Each song becomes 1,280 numbers that describe its sound. UMAP squeezes them onto a flat map where songs that
         sound alike end up as neighbours. The axes have no fixed meaning; only the distances do.</p>
-      <p class="finding">Nobody told the model about genres, yet it found its own directions: left to right goes from
+      <p class="finding" data-personal>Nobody told the model about genres, yet it found its own directions: left to right goes from
         acoustic to electronic, top to bottom from guitars to beats. Latin music forms its own islands, and Funk/Soul
         splits into classic soul near rock and modern R&amp;B near hip hop.</p>
     </div>
@@ -275,7 +276,7 @@
       <div class="side">Feeling</div>
       <h2>Emotion map</h2>
       <p>Every song placed by valence (sad → happy) and arousal (calm → intense) on a 1–9 scale.</p>
-      <p class="finding">My library forms a diagonal band: calm songs lean melancholic, intense songs lean happy.
+      <p class="finding" data-personal>My library forms a diagonal band: calm songs lean melancholic, intense songs lean happy.
         My average lands almost exactly in the middle. The tense corner is mostly hip hop; the sad, tired corner is
         folk and acoustic.</p>
     </div>
@@ -312,7 +313,7 @@
     <div class="track-head">
       <div class="side">Mood</div>
       <h2>Then vs. now</h2>
-      <p class="finding">Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
+      <p class="finding" data-personal>Lately I play more electronic music, and more relaxed and danceable songs. Acoustic and happy
         songs dropped compared with the library as a whole.</p>
     </div>
     <div class="chart mid loading" id="moods">Loading…</div>
@@ -325,7 +326,7 @@
       <h2>Describe a sound, find it in my library</h2>
       <p>CLAP was trained on audio paired with text, so a sentence and a song live in the same space: the closer they are,
         the better the song fits the description. Pick a description to see my songs that sound most like it.</p>
-      <p class="finding">CLAP hears instruments and textures very well (orchestras, distorted guitars, accordions, choirs,
+      <p class="finding" data-personal>CLAP hears instruments and textures very well (orchestras, distorted guitars, accordions, choirs,
         drum machines) but genres and vocal styles poorly: it scores "someone rapping" lower on my hip hop than on my jazz.
         So these searches describe what something sounds like, not what genre it is.</p>
     </div>
@@ -352,7 +353,7 @@
         <h2>Key wheel</h2>
         <p>The key of every song on the circle of fifths, where neighbouring keys sound related. Each slot pairs a
           major key with its relative minor, such as C major and A minor.</p>
-        <p class="finding">C major and A minor lead, and my music leans to the guitar-friendly sharp side
+        <p class="finding" data-personal>C major and A minor lead, and my music leans to the guitar-friendly sharp side
           (G, D, A, E). Flat keys like E♭, A♭ and D♭ are rare.</p>
         <p class="method">Essentia KeyExtractor</p>
       </div>
@@ -364,7 +365,7 @@
     <div class="track-head">
       <div class="side">Rhythm</div>
       <h2>Tempo by genre</h2>
-      <p class="finding">Rock is my fastest genre, with a median around 120 BPM. Latin is the slowest, with a peak
+      <p class="finding" data-personal>Rock is my fastest genre, with a median around 120 BPM. Latin is the slowest, with a peak
         near 90 BPM, the typical reggaeton groove. Hip hop is spread across the whole range.</p>
     </div>
     <div class="controls" id="tempo-genres" role="group" aria-label="Genre"></div>
@@ -376,7 +377,7 @@
     <div class="track-head">
       <div class="side">Instruments</div>
       <h2>What's playing</h2>
-      <p class="finding">Drums and bass lead, then guitars. My favourite songs carry more synthesizer and less piano and
+      <p class="finding" data-personal>Drums and bass lead, then guitars. My favourite songs carry more synthesizer and less piano and
         acoustic guitar than the library overall, which matches the move to electronic music.</p>
     </div>
     <div class="chart mid loading" id="instr">Loading…</div>
@@ -472,7 +473,7 @@
     <div class="track-head">
       <div class="side">Time</div>
       <h2>My music through time</h2>
-      <p class="finding">Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
+      <p class="finding" data-personal>Release years peak in 2017–2019. I've added Liked Songs steadily since late 2018; the busiest
         month was October 2023.</p>
     </div>
     <div class="chart short loading" id="years">Loading…</div>
@@ -517,7 +518,7 @@
       <div class="chart mid loading" id="skip-start">Loading…</div>
       <div class="chart mid loading" id="skip-cal">Loading…</div>
     </div>
-    <div class="track-head subhead">
+    <div class="track-head subhead" data-personal>
       <div class="side">Lesson learned · data leakage</div>
       <h3>Twice, a model looked too good to be true</h3>
       <p><b>The recommender</b> first scored a perfect AUC of 1.00: its network was tested on the same candidate songs it had
@@ -535,15 +536,15 @@
     <div class="split">
       <div class="track-head">
         <div class="side">One song up close</div>
-        <h2>Song card: Marianne</h2>
-        <p>The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM. From top to bottom:
+        <h2 id="card-title">Song card: Marianne</h2>
+        <p><span id="card-intro">The raw signal behind one of my most played songs, by Fontaines D.C., at 161 BPM.</span> From top to bottom:
           the waveform with detected beats, the mel spectrogram (the picture the neural networks actually "see"),
           the chromagram (which of the 12 notes are sounding) and loudness over time.</p>
-        <p class="finding">You can read the chord changes as yellow blocks in the chromagram, and the breakdown after
+        <p class="finding" data-personal>You can read the chord changes as yellow blocks in the chromagram, and the breakdown after
           24 seconds in all four panels at once.</p>
         <p class="method">librosa · 30 s Deezer preview</p>
       </div>
-      <figure><img src="img/song_card.webp" alt="Song card with waveform, mel spectrogram, chromagram and loudness of Marianne" loading="lazy" width="1300" height="1170"></figure>
+      <figure><img src="img/song_card.webp" id="card-img" alt="Song card with waveform, mel spectrogram, chromagram and loudness of Marianne" loading="lazy" width="1300" height="1170"></figure>
     </div>
   </section>
 
@@ -644,6 +645,30 @@
 
   function build(D) {
     var S = D.songs, N = S.name.length, G = D.genres;
+    // ---- whose page this is
+    var PR0 = D.profile || { display_name: 'Leo', personal_notes: true };
+    if (!PR0.personal_notes) {
+      document.querySelectorAll('[data-personal]').forEach(function (el) { el.hidden = true; });
+      document.getElementById('title').textContent = 'What ' + PR0.display_name + '\'s music sounds like';
+      document.getElementById('kicker').textContent = 'MusicBrain · ' + PR0.display_name + '\'s listening, analysed';
+      document.title = PR0.display_name + ' · MusicBrain';
+      var lg = document.getElementById('lead-generic');
+      lg.textContent = 'Every song streamed at least a few times, analysed from its 30-second preview by two machine-learning audio models, ' +
+        'combined with the full Spotify streaming history. All charts are computed from this data; hover a dot to see the song.';
+      lg.hidden = false;
+    }
+    var SC0 = PR0.song_card;
+    if (SC0) {
+      document.getElementById('cover-credit').textContent = 'mel spectrogram · ' + SC0.artist + ' – ' + SC0.name + ' · 0–30 s';
+      document.getElementById('card-title').textContent = 'Song card: ' + SC0.name;
+      document.getElementById('card-intro').textContent = 'The raw signal behind ' + (PR0.personal_notes ? 'one of my' : 'one of the') +
+        ' most played songs, by ' + SC0.artist + ', at ' + SC0.bpm + ' BPM.';
+      document.getElementById('card-img').alt = 'Song card with waveform, mel spectrogram, chromagram and loudness of ' + SC0.name;
+    }
+    // views without data for this profile disappear from the menu
+    var noTab = function (view) { var a = document.querySelector('nav.tracklist a[data-view="' + view + '"]'); if (a) a.parentNode.hidden = true; };
+    if (!D.origins || !D.origins.iso3.length) { document.getElementById('origins').hidden = true; noTab('origins'); }
+    if (!D.years.year.length && !D.added.month.length) document.getElementById('time').hidden = true;
     var color = function (g) { return g < SERIES.length && G[g] !== 'Other' ? SERIES[g] : OTHER; };
     var hover = S.name.map(function (n, i) {
       return '<b>' + esc(n) + '</b><br>' + esc(S.artist[i]) + '<br><span style="color:' + LABEL + '">' + esc(G[S.g[i]]) +
@@ -813,9 +838,10 @@
         'They agree far above chance, but not completely: ' + pc(CMP.matched_share) + ' of songs land in the matching cluster ' +
         '(ARI ' + CMP.ari.toFixed(2) + ', where chance is 0.00 and my own model refit on new samples reaches ' + CMP.essentia_stability.toFixed(2) + '). ' +
         agree.slice(0, 3).map(function (a) { return a[0] + ' ' + pc(a[1]); }).join(', ') + ' are heard the same way by both. ' +
-        weakest[0] + ' is the big disagreement (' + pc(weakest[1]) + '): CLAP has no such cluster. It splits those songs by sound texture, ' +
-        'not by era: guitar-heavy tracks go with rock, vocal and brass-heavy tracks go with Regional Mexican. Essentia learned genres from ' +
-        'Discogs labels; CLAP learned from descriptions of what instruments and voices sound like.';
+        weakest[0] + ' is the big disagreement (' + pc(weakest[1]) + '). ' + ((D.profile || {}).personal_notes ?
+          'CLAP has no such cluster: it splits those songs by sound texture, not by era (guitar-heavy tracks go with rock, vocal and ' +
+          'brass-heavy tracks go with Regional Mexican). ' : '') + 'Essentia learned genres from Discogs labels; CLAP learned from ' +
+        'descriptions of what instruments and voices sound like.';
       document.getElementById('clap-method').textContent = 'CLAP (LAION clap-htsat-unfused, 512-d) → same pipeline, k = ' + CMP.k +
         ' · Hungarian matching of clusters · NMI ' + CMP.nmi.toFixed(2) + ' · a song\'s 10 nearest neighbours overlap ' + pc(CMP.neighbour_overlap) +
         ' between models (chance ' + (CMP.neighbour_random * 100).toFixed(1) + '%) · song-to-song similarity Spearman ρ ' + CMP.similarity_spearman.toFixed(2) +
@@ -1312,8 +1338,9 @@
         var acPeak = P.by_year.slice().sort(function (a, b) { return b.acoustic - a.acoustic; })[0];
         var disc = P.discovery, dmax = disc.songs.indexOf(Math.max.apply(null, disc.songs));
         var cards = [
-          { t: 'My music ignores the clock', body: '<p>At night my music is barely sadder than in the afternoon (' + pctf(night.sad) + ' vs ' + pctf(aft.sad) +
-              ' sad), and tempo stays around ' + aft.bpm + ' BPM all day. No night mode, no party weekend.</p><table><tr><th></th><th>valence</th><th>energy</th><th>sad</th><th>dance</th></tr>' +
+          { t: Math.abs(night.sad - aft.sad) < 0.04 ? 'My music ignores the clock' : 'My music changes with the clock',
+            body: '<p>At night my music is ' + (night.sad >= aft.sad ? 'sadder' : 'less sad') + ' than in the afternoon (' + pctf(night.sad) + ' vs ' + pctf(aft.sad) +
+              ' sad), with tempo around ' + night.bpm + ' BPM at night and ' + aft.bpm + ' BPM in the afternoon.</p><table><tr><th></th><th>valence</th><th>energy</th><th>sad</th><th>dance</th></tr>' +
               P.by_slot.map(function (r) { return '<tr><td>' + r.name + ' <small>' + r.hours + '</small></td><td>' + r.valence.toFixed(2) + '</td><td>' + r.arousal.toFixed(2) + '</td><td>' + pctf(r.sad) + '</td><td>' + pctf(r.danceable) + '</td></tr>'; }).join('') + '</table>' },
           { t: 'But my taste moves over the years', chart: 'pat-years', body: '<p>Acoustic peaked in ' + acPeak.year + ' (' + pctf(acPeak.acoustic) + '); in ' + yN.year + ' electronic (' +
               pctf(yN.electronic) + ') overtook acoustic (' + pctf(yN.acoustic) + ').</p>' },
@@ -1477,7 +1504,8 @@
             Math.round(wide.focus * 100) + '% of listening goes to each month\'s top 10 artists.';
         })();
       var bicBest = ER.candidates.k[ER.candidates.bic.indexOf(Math.min.apply(null, ER.candidates.bic))];
-      document.getElementById('eras-method').textContent = ER.months.length + ' months × 15 features (7 cluster shares, 6 moods, discovery, focus), standardised · ' +
+      document.getElementById('eras-method').textContent = ER.months.length + ' months × ' + (ER.n_features || 15) + ' features (' +
+        (ER.feature_groups || ['clusters', 'moods', 'discovery', 'focus']).join(', ') + '), standardised · ' +
         'optimal segmentation by dynamic programming, months weighted by √hours, eras of at least 4 months · number of eras chosen by BIC (best: ' + bicBest +
         '; 3–5 score almost the same, so the big turns are solid and the finer splits are softer) · names are mine, the boundaries are the algorithm\'s';
 
