@@ -1471,7 +1471,11 @@
       var maxDisc = eras.slice().sort(function (a, b) { return b.discovery - a.discovery; })[0];
       document.getElementById('eras-finding').textContent = 'The data finds ' + eras.length + ' eras. The longest, “' + longest.name + '”, lasted ' +
         longest.months + ' months; I discovered the most new music in “' + maxDisc.name + '” (' + Math.round(maxDisc.discovery * 100) +
-        '% of listening on songs new that month), and today\'s era is the widest: the least focused on a few artists.';
+        '% of listening on songs new that month). ' + (function () {
+          var wide = eras.slice().sort(function (a, b) { return a.focus - b.focus; })[0];
+          return (wide === eras[eras.length - 1] ? 'Today\'s era' : '“' + wide.name + '”') + ' is the widest: only ' +
+            Math.round(wide.focus * 100) + '% of listening goes to each month\'s top 10 artists.';
+        })();
       var bicBest = ER.candidates.k[ER.candidates.bic.indexOf(Math.min.apply(null, ER.candidates.bic))];
       document.getElementById('eras-method').textContent = ER.months.length + ' months × 15 features (7 cluster shares, 6 moods, discovery, focus), standardised · ' +
         'optimal segmentation by dynamic programming, months weighted by √hours, eras of at least 4 months · number of eras chosen by BIC (best: ' + bicBest +
