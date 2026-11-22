@@ -199,6 +199,7 @@
     <li><a href="#anatomy" data-view="anatomy">Anatomy</a></li>
     <li><a href="#history" data-view="history">History</a></li>
     <li><a href="#origins" data-view="origins">Origins</a></li>
+    <li><a href="#ml" data-view="ml">ML lab</a></li>
     <li class="quick"><input id="quickfind" list="songlist" placeholder="Find a song…" aria-label="Find a song and show it on the charts" autocomplete="off"></li>
   </ol>
 </nav>
@@ -468,6 +469,44 @@
     </div>
     <div class="chart tall loading" id="worldmap">Loading…</div>
     <div class="chart mid loading" id="countries">Loading…</div>
+  </section>
+
+  <section class="track" id="skips">
+    <div class="track-head">
+      <div class="side">ML lab · supervised classification</div>
+      <h2>Can a model predict when I'll skip a song?</h2>
+      <p>Every play in my history is a labelled example: skipped (ended with "next" before 30 seconds) or not. The models only
+        see what is known the moment a song starts: the song's audio, the time and device, how the play started, what happened
+        earlier in the session, and how often I played and skipped it before. They learn on 2018 to mid-2024, are tuned on the
+        second half of 2024, and are tested on 2025–2026: predicting my future, like a real system would.</p>
+      <p class="finding" id="skip-finding">Loading…</p>
+    </div>
+    <div class="pair">
+      <div class="chart mid loading" id="skip-models">Loading…</div>
+      <div class="chart mid loading" id="skip-families">Loading…</div>
+    </div>
+    <div class="quad" id="skip-effects">
+      <div class="chart mini loading" id="eff-session">Loading…</div>
+      <div class="chart mini loading" id="eff-plays">Loading…</div>
+      <div class="chart mini loading" id="eff-days">Loading…</div>
+      <div class="chart mini loading" id="eff-sim">Loading…</div>
+    </div>
+    <div class="pair">
+      <div class="chart mid loading" id="skip-start">Loading…</div>
+      <div class="chart mid loading" id="skip-cal">Loading…</div>
+    </div>
+    <div class="track-head subhead">
+      <div class="side">Lesson learned · data leakage</div>
+      <h3>Twice, a model looked too good to be true</h3>
+      <p><b>The recommender</b> first scored a perfect AUC of 1.00: its network was tested on the same candidate songs it had
+        learned to call "not mine", so it just remembered them. Cross-fitting (each song scored by a model that never saw it)
+        brought it back to honest numbers.</p>
+      <p><b>This skip model</b> first reached 0.92. Almost all of it came from one feature, the time since the previous play.
+        Spotify's timestamp marks when a song <i>stopped</i>, so that gap secretly contained how long the current song played,
+        which is the answer itself. Rebuilding every time feature from the start time dropped it to an honest
+        <span id="skip-honest">0.82</span>. Both times, the evaluation design caught it before any conclusion was drawn.</p>
+    </div>
+    <p class="method" id="skip-method"></p>
   </section>
 
   <section class="track" id="signal">
@@ -1397,6 +1436,75 @@
       });
     }
 
+    // ---------- ML lab: skip prediction ----------
+    var SK = D.skip, skipSec = document.getElementById('skips');
+    if (!SK) {
+      skipSec.hidden = true;
+      var nm = document.querySelector('nav.tracklist a[data-view="ml"]'); if (nm) nm.parentNode.hidden = true;
+    } else {
+      var R2 = SK.results, order2 = ['baseline', 'logistic', 'neural net', 'boosting'].filter(function (m) { return R2[m]; });
+      var best2 = R2[SK.best], famSorted = Object.keys(SK.family_importance).sort(function (a, b) { return SK.family_importance[b] - SK.family_importance[a]; });
+      var er = SK.effects;
+      document.getElementById('skip-finding').textContent = 'The best model (' + SK.best + ') reaches a test AUC of ' + best2.auc.toFixed(2) +
+        ' (a random guess is 0.50, "skip as often as I used to" only ' + R2.baseline.auc.toFixed(2) + '). What predicts a skip is my mode, not ' +
+        'the song: the ' + famSorted[0] + ' features matter by far the most, the song\'s audio the least. If I skipped the previous song I keep ' +
+        'skipping, the first song of a session is skipped ' + Math.round(er.session_pos.observed[0] * 100) + '% of the time, and a song that sounds ' +
+        'very much like the one before gets skipped more, which supports the recommender\'s rule to keep picks diverse.';
+      document.getElementById('skip-honest').textContent = best2.auc.toFixed(2);
+      document.getElementById('skip-method').textContent = fmt(SK.n) + ' plays (skip rate ' + Math.round(SK.skip_rate * 100) + '%) · ' + SK.features +
+        ' features · train ' + fmt(SK.split.train) + ' / validation ' + fmt(SK.split.val) + ' / test ' + fmt(SK.split.test) +
+        ' plays · scikit-learn: logistic regression, HistGradientBoosting, MLP · model chosen on validation, never on test · audio known for ' +
+        Math.round(SK.audio_coverage * 100) + '% of plays';
+      var mnames = { baseline: 'Baseline: my past skip rate', logistic: 'Logistic regression', 'neural net': 'Neural network (MLP)', boosting: 'Gradient boosting' };
+      Plotly.newPlot(ready('skip-models'), [
+        { type: 'bar', orientation: 'h', name: 'ROC AUC', y: order2.map(function (m) { return mnames[m]; }), x: order2.map(function (m) { return R2[m].auc; }),
+          marker: { color: '#4F9BE8' }, text: order2.map(function (m) { return R2[m].auc.toFixed(2); }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+          hovertemplate: '%{y}: AUC %{x:.3f}<extra></extra>' },
+        { type: 'bar', orientation: 'h', name: 'Average precision', y: order2.map(function (m) { return mnames[m]; }), x: order2.map(function (m) { return R2[m].ap; }),
+          marker: { color: SERIES[2] }, text: order2.map(function (m) { return R2[m].ap.toFixed(2); }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+          hovertemplate: '%{y}: average precision %{x:.3f}<extra></extra>' }
+      ], base({ barmode: 'group', margin: { l: 190, r: 40, t: 36, b: 40 },
+                title: { text: 'Test 2025–2026: higher is better', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                xaxis: axis('', { range: [0, 1] }), yaxis: axis('', { tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }),
+                legend: { orientation: 'h', y: -0.15, font: { color: INK } } }), CONFIG);
+      var famLabel = { session: 'Session (what I just did)', context: 'Context (time, device, how it started)', familiarity: 'Familiarity (my history with it)', audio: 'The song\'s audio' };
+      var fr = famSorted.slice().reverse();
+      Plotly.newPlot(ready('skip-families'), [{ type: 'bar', orientation: 'h', y: fr.map(function (k) { return famLabel[k] || k; }),
+        x: fr.map(function (k) { return SK.family_importance[k]; }), marker: { color: '#4F9BE8' },
+        text: fr.map(function (k) { return '−' + SK.family_importance[k].toFixed(3); }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+        hovertemplate: '%{y}: AUC drops by %{x:.3f} when shuffled<extra></extra>' }],
+        base({ margin: { l: 230, r: 50, t: 36, b: 40 }, title: { text: 'What the model relies on (AUC lost when shuffled)', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+               xaxis: axis('drop in test AUC'), yaxis: axis('', { tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+      var effPlot = function (id, e, title) {
+        Plotly.newPlot(ready(id), [
+          { type: 'bar', name: 'observed', x: e.bins, y: e.observed.map(function (v) { return v == null ? null : v * 100; }), marker: { color: '#1D6596' },
+            customdata: e.n, hovertemplate: '%{x}: %{y:.0f}% skipped (%{customdata} plays)<extra></extra>' },
+          { type: 'scatter', mode: 'lines+markers', name: 'model', x: e.bins, y: e.predicted.map(function (v) { return v == null ? null : v * 100; }),
+            line: { color: INK, width: 2 }, marker: { size: 6 }, hovertemplate: '%{x}: model says %{y:.0f}%<extra></extra>' }
+        ], base({ margin: { l: 44, r: 10, t: 34, b: 40 }, showlegend: false, title: { text: title, x: 0.03, xref: 'container', font: { color: INK, size: 13 } },
+                  xaxis: axis('', { tickfont: { color: LABEL, size: 10 } }), yaxis: axis('% skipped', { rangemode: 'tozero' }) }), CONFIG);
+      };
+      effPlot('eff-session', er.session_pos, 'Position in the listening session');
+      effPlot('eff-plays', er.song_prev_plays, 'Times I had played the song before');
+      effPlot('eff-days', er.days_since_song, 'Time since I last played it');
+      effPlot('eff-sim', er.sim_to_prev, 'How much it sounds like the song before');
+      var sr = SK.start_rates, sname = { trackdone: 'Previous song ended', clickrow: 'I picked it', fwdbtn: 'I pressed next', backbtn: 'I pressed back', playbtn: 'I pressed play' };
+      var sk2 = Object.keys(sr).sort(function (a, b) { return sr[a] - sr[b]; });
+      Plotly.newPlot(ready('skip-start'), [{ type: 'bar', orientation: 'h', y: sk2.map(function (k) { return sname[k] || k; }), x: sk2.map(function (k) { return sr[k] * 100; }),
+        marker: { color: '#4F9BE8' }, text: sk2.map(function (k) { return Math.round(sr[k] * 100) + '%'; }), textposition: 'outside', cliponaxis: false, textfont: { color: INK },
+        hovertemplate: '%{y}: %{x:.0f}% skipped<extra></extra>' }],
+        base({ margin: { l: 150, r: 40, t: 36, b: 40 }, title: { text: 'How the play started → how often I skip', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+               xaxis: axis('% skipped (test period)', { range: [0, 100] }), yaxis: axis('', { tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+      var cal = SK.calibration;
+      Plotly.newPlot(ready('skip-cal'), [
+        { type: 'scatter', mode: 'lines', x: [0, 100], y: [0, 100], line: { color: GROOVE, dash: 'dot' }, hoverinfo: 'skip', name: 'perfect' },
+        { type: 'scatter', mode: 'lines+markers', x: cal.predicted.map(function (v) { return v * 100; }), y: cal.observed.map(function (v) { return v * 100; }),
+          line: { color: '#4F9BE8', width: 2 }, marker: { size: 7 }, name: SK.best, hovertemplate: 'model says %{x:.0f}% → I skipped %{y:.0f}%<extra></extra>' }
+      ], base({ margin: { l: 50, r: 12, t: 36, b: 44 }, showlegend: false,
+                title: { text: 'Calibration: when it says 70%, do I skip 70%?', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                xaxis: axis('predicted skip %', { range: [0, 100] }), yaxis: axis('observed skip %', { range: [0, 100] }) }), CONFIG);
+    }
+
     // ---------- the selected song, circled on the other charts ----------
     function markOn(el, x, y, z) {
       if (!el || !el.data || !el.data.length) return;
@@ -1540,7 +1648,7 @@
 
 // Views: one group of sections at a time, chosen by the tabs (and by #name in the address, so views can be shared)
 var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'],
-              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['history', 'time'], origins: ['origins'] };
+              anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['history', 'time'], origins: ['origins'], ml: ['skips'] };
 var SECTION_VIEW = {};
 Object.keys(VIEWS).forEach(function (v) { VIEWS[v].forEach(function (id) { SECTION_VIEW[id] = v; }); });
 function goView(v, keepScroll) {
