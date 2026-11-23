@@ -115,6 +115,12 @@
   .recrow i { font: 12px var(--mono); font-style: normal; color: var(--accent); }
   .recrow small { color: var(--label); }
   #rec-list { max-height: 520px; overflow: auto; }
+  .wordgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .wcard { border: 1px solid var(--groove); border-radius: 10px; background: var(--ground); padding: 12px 14px; }
+  .wcard h4 { margin: 0 0 8px; font: 600 14px var(--body); color: var(--ink); }
+  .wcard .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wchip { font: 13px var(--body); color: var(--ink); background: var(--sleeve); border: 1px solid var(--groove); border-radius: 999px; padding: 3px 10px; }
+  .wchip small { color: var(--label); font: 11px var(--mono); margin-left: 4px; }
   .forgot { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .pattern .big { font: 500 30px/1.1 var(--mono); color: var(--ink); }
   .pattern table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -206,6 +212,7 @@
     <li><a href="#feeling" data-view="feeling">Feeling</a></li>
     <li><a href="#explore" data-view="explore">Explore</a></li>
     <li><a href="#listen" data-view="listen">Search by sound</a></li>
+    <li><a href="#lyrics" data-view="lyrics">Lyrics</a></li>
     <li><a href="#anatomy" data-view="anatomy">Anatomy</a></li>
     <li><a href="#history" data-view="history">History</a></li>
     <li><a href="#origins" data-view="origins">Origins</a></li>
@@ -349,6 +356,96 @@
         in standard deviations.</p>
     </div>
     <div class="scrollx"><div class="chart loading" id="clap-profile" style="min-width:640px;height:900px">Loading…</div></div>
+  </section>
+
+  <section class="track" id="words">
+    <div class="track-head">
+      <div class="side">Lyrics · sound vs words</div>
+      <h2>Do the words feel like the sound?</h2>
+      <p>Every song with lyrics, placed by how happy it sounds (valence from the audio) and how positive its words are
+        (a multilingual sentiment model reading the lyrics, stanza by stanza). Top left: songs that sound sad but say
+        happy things. Bottom right: songs that sound happy and say sad things.</p>
+      <p class="finding" id="ly-finding">Loading…</p>
+    </div>
+    <div class="chart tall loading" id="ly-scatter">Loading…</div>
+    <div class="pair" style="margin-top:16px">
+      <div class="finder"><div class="side">Happy sound, sad words</div><ul class="alike" id="ly-hs"></ul></div>
+      <div class="finder"><div class="side">Sad sound, happy words</div><ul class="alike" id="ly-sh"></ul></div>
+    </div>
+    <p class="method" id="ly-method"></p>
+  </section>
+
+  <section class="track" id="themes">
+    <div class="track-head">
+      <div class="side">Lyrics · themes</div>
+      <h2>What my songs talk about</h2>
+      <p>A multilingual language model reads every stanza and compares it with short descriptions of themes, such as "a
+        breakup song about a broken heart" or "canción de fiesta para bailar toda la noche". A song gets a theme when it is
+        about it clearly more than my average song, so themes are relative to my own music. Pick a theme to see the
+        songs most about it, and in which clusters it lives.</p>
+      <p class="finding" id="th-finding">Loading…</p>
+    </div>
+    <div class="controls" id="th-pills" role="group" aria-label="Lyric themes"></div>
+    <div class="pair">
+      <div class="finder"><div class="side" id="th-title">Most about it</div><ul class="alike" id="th-list"></ul></div>
+      <div class="chart mid loading" id="th-share">Loading…</div>
+    </div>
+    <div class="track-head subhead">
+      <div class="side">Themes by taste cluster</div>
+      <h3>Songs that sound alike, talking about different things</h3>
+      <p>Each cell is how much more (blue) or less (orange) a cluster's lyrics are about a theme than my average song.</p>
+    </div>
+    <div class="scrollx"><div class="chart loading" id="th-cluster" style="min-width:680px;height:520px">Loading…</div></div>
+    <div class="track-head subhead" id="th-eras-head">
+      <div class="side">Themes through my eras</div>
+      <h3>What I was listening to people sing about</h3>
+      <p>The same themes, weighted by the hours I played each song during each of my music eras.</p>
+    </div>
+    <div class="scrollx"><div class="chart loading" id="th-eras" style="min-width:680px;height:380px">Loading…</div></div>
+    <div class="track-head subhead">
+      <div class="side">Words</div>
+      <h3>The words that give each cluster away</h3>
+      <p>Words found in a much larger share of a cluster's songs than of the whole library. The percentage is the share of the
+        cluster's songs with that word. Only single words are shown here; the lyrics themselves never leave my computer.</p>
+    </div>
+    <div class="wordgrid" id="th-words"></div>
+  </section>
+
+  <section class="track" id="languages">
+    <div class="track-head">
+      <div class="side">Lyrics · languages and style</div>
+      <h2>In which language, and how it is sung</h2>
+      <p>The language of every song's lyrics, and how each taste cluster writes: how many words a minute, how much
+        the text repeats itself (choruses and hooks), and how varied the vocabulary is.</p>
+      <p class="finding" id="lg-finding">Loading…</p>
+    </div>
+    <div class="pair">
+      <div class="chart mid loading" id="lg-bar">Loading…</div>
+      <div>
+        <div class="controls" id="lg-pills" role="group" aria-label="Writing style measure" style="margin-bottom:8px"></div>
+        <div class="chart mid loading" id="lg-style">Loading…</div>
+      </div>
+    </div>
+    <div class="track-head subhead" id="lg-time-head">
+      <div class="side">Over time</div>
+      <h3>The language of what I played, month by month</h3>
+      <p>Share of my listening hours each month, among the songs analysed here.</p>
+    </div>
+    <div class="chart mid loading" id="lg-time">Loading…</div>
+    <div class="track-head subhead" id="lg-val-head">
+      <div class="side">Over time</div>
+      <h3>Did the words or the sound change?</h3>
+      <p>Average positivity of the words and of the sound of what I played each month, each compared with my average
+        month (in standard deviations).</p>
+    </div>
+    <div class="chart mid loading" id="lg-val">Loading…</div>
+    <div class="track-head subhead" id="lg-beh-head">
+      <div class="side">Listening behaviour</div>
+      <h3>Do lyrics change how I listen?</h3>
+      <p class="finding" id="lg-beh-finding"></p>
+    </div>
+    <div class="chart mid loading" id="lg-beh">Loading…</div>
+    <p class="method" id="lg-method"></p>
   </section>
 
   <section class="track" id="harmony">
@@ -940,6 +1037,7 @@
     var VARS = [['bpm', 'Tempo (BPM)'], ['a', 'Energy (1–9)'], ['v', 'Happiness (1–9)'], ['danceable', 'Danceable (%)'],
                 ['acoustic', 'Acoustic (%)'], ['electronic', 'Electronic (%)'], ['relaxed', 'Relaxed (%)'], ['sad', 'Sad (%)'],
                 ['party', 'Party (%)'], ['aggressive', 'Aggressive (%)'], ['year', 'Release year']];
+    if (S.lv) VARS.push(['lv', 'Word positivity (−1 to 1)'], ['wpm', 'Words per minute'], ['rep', 'Lyric repetition'], ['voc', 'Vocabulary variety']);
     var VAR_LABEL = {}; VARS.forEach(function (v) { VAR_LABEL[v[0]] = v[1]; });
     var PCT = { danceable: 1, acoustic: 1, electronic: 1, relaxed: 1, sad: 1, party: 1, aggressive: 1 };
     var val = function (k, i) { var x = S[k][i]; return x == null ? null : (PCT[k] ? Math.round(x * 1000) / 10 : x); };
@@ -1116,6 +1214,212 @@
                  xaxis: axis('', { side: 'bottom', tickangle: -35, tickfont: { color: INK, size: 11 }, showgrid: false }),
                  yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 11 }, showgrid: false }) }), CONFIG);
     }
+
+    // ---------- Lyrics ----------
+    var LY = D.lyrics;
+    if (!LY) {
+      ['words', 'themes', 'languages'].forEach(function (id) { document.getElementById(id).hidden = true; });
+      noTab('lyrics');
+    } else (function () {
+      var LANG = LY.languages.map(function (l) { return l.lang; });
+      var nLy = LY.kinds.lyrics || 0, nIns = LY.kinds.instrumental || 0;
+      var songList = function (idx, extra) {
+        return idx.map(function (j, n) {
+          return '<li><button type="button" data-song="' + j + '"><i>' + (n + 1) + '</i><span>' + esc(S.name[j]) + ' <small>' + esc(S.artist[j]) +
+                 (extra ? ' · ' + extra(j) : '') + '</small></span></button></li>';
+        }).join('');
+      };
+      ['ly-hs', 'ly-sh', 'th-list'].forEach(function (id) {
+        document.getElementById(id).addEventListener('click', function (e) { var b = e.target.closest('[data-song]'); if (b) pickSong(+b.dataset.song); });
+      });
+      var sign = function (x) { return (x > 0 ? '+' : '') + x.toFixed(2); };
+
+      // sound vs words
+      var V = LY.valence, lyIdx = [];
+      for (var i2 = 0; i2 < N; i2++) if (S.lv[i2] != null && S.v[i2] != null) lyIdx.push(i2);
+      var lyBy = G.map(function () { return []; });
+      lyIdx.forEach(function (j) { lyBy[S.g[j]].push(j); });
+      var mv = lyIdx.reduce(function (a, j) { return a + S.v[j]; }, 0) / lyIdx.length;
+      var ml = lyIdx.reduce(function (a, j) { return a + S.lv[j]; }, 0) / lyIdx.length;
+      var lyEl = ready('ly-scatter');
+      var lyTraces = G.map(function (g, gi) {
+        var idx = lyBy[gi];
+        return { type: 'scattergl', mode: 'markers', name: g, x: pick(S.v, idx), y: pick(S.lv, idx), customdata: idx,
+                 text: idx.map(function (j) { return hover[j] + '<br>words ' + sign(S.lv[j]) + ' · sound ' + S.v[j]; }),
+                 hovertemplate: '%{text}<extra></extra>', marker: { size: 6, color: color(gi), opacity: 0.75 } };
+      });
+      var vx = pick(S.v, lyIdx), x0 = Math.min.apply(null, vx) - .1, x1 = Math.max.apply(null, vx) + .1;
+      var q2 = function (x, y, t, xa, ya) { return { x: x, y: y, xref: 'x', yref: 'y', text: t, showarrow: false, xanchor: xa, yanchor: ya, font: { color: LABEL, size: 12 } }; };
+      function drawLy() {
+        Plotly.react(lyEl, lyTraces.concat([highlight(selected != null && S.lv[selected] != null ? [S.v[selected]] : [], selected != null && S.lv[selected] != null ? [S.lv[selected]] : [])]),
+          base({ xaxis: axis('Sound: sad → happy (valence, 1–9)', { range: [x0, x1] }), yaxis: axis('Words: negative → positive', { range: [-1.05, 1.05] }),
+                 shapes: [{ type: 'line', x0: mv, x1: mv, y0: -1.05, y1: 1.05, line: { color: GROOVE, width: 1.5 } },
+                          { type: 'line', y0: ml, y1: ml, x0: x0, x1: x1, line: { color: GROOVE, width: 1.5 } }],
+                 annotations: [q2(x0, 1.03, 'Sad sound · happy words', 'left', 'top'), q2(x1, 1.03, 'Both happy', 'right', 'top'),
+                               q2(x0, -1.03, 'Both sad', 'left', 'bottom'), q2(x1, -1.03, 'Happy sound · sad words', 'right', 'bottom')],
+                 legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', itemsizing: 'constant' }, LEG_TOP),
+                 margin: { l: 56, r: 16, t: TOP_GAP, b: 48 }, dragmode: dragFor('ly-scatter', 'zoom') }), configFor('ly-scatter'));
+      }
+      drawLy();
+      unlockButton('ly-scatter', drawLy);
+      legendTools('ly-scatter', 'genres');
+      lyEl.on('plotly_click', function (ev) { var p = ev.points && ev.points[0]; if (p && p.customdata != null) pickSong(p.customdata); });
+      var Q = V.quadrants, qTot = Q['happy sound, sad words'] + Q['sad sound, happy words'] + Q['both happy'] + Q['both sad'];
+      var bc = Object.keys(V.by_cluster).sort(function (a, b) { return V.by_cluster[b] - V.by_cluster[a]; });
+      document.getElementById('ly-finding').textContent = 'The link between the sound and the words is ' +
+        (Math.abs(V.r) < 0.1 ? 'almost zero' : Math.abs(V.r) < 0.3 ? 'weak' : 'clear') + ' (r = ' + V.r.toFixed(2) + '): ' +
+        Math.round(100 * (Q['happy sound, sad words'] + Q['sad sound, happy words']) / qTot) + '% of the songs are on opposite sides, sounding happier than ' +
+        'they speak or the other way round. ' + (bc.length > 1 ? 'Sound and words agree most in ' + bc[0] + ' (r = ' + V.by_cluster[bc[0]].toFixed(2) +
+        ') and least in ' + bc[bc.length - 1] + ' (r = ' + V.by_cluster[bc[bc.length - 1]].toFixed(2) + ').' : '');
+      var gapTxt = function (j) { return 'sound ' + S.v[j] + ' · words ' + sign(S.lv[j]); };
+      document.getElementById('ly-hs').innerHTML = songList(V.happy_sound_sad_words.slice(0, 10), gapTxt);
+      document.getElementById('ly-sh').innerHTML = songList(V.sad_sound_happy_words.slice(0, 10), gapTxt);
+      var src = LY.sources, val2 = LY.validation;
+      document.getElementById('ly-method').textContent = fmt(nLy) + ' songs with lyrics, ' + fmt(nIns) + ' instrumental · lyrics from LRCLIB (' + fmt(src.lrclib || 0) +
+        ', matched by artist, title and duration) and Genius (' + fmt(src.genius || 0) + ', only when the Genius page is the right song' +
+        (val2.jaccard_trusted != null ? ': trusted pages share ' + Math.round(val2.jaccard_trusted * 100) + '% of their words with LRCLIB, rejected ones ' +
+          Math.round((val2.jaccard_rejected || 0) * 100) + '%' : '') + ') · words: XLM-RoBERTa sentiment, positive − negative, averaged over distinct stanzas · ' +
+        'sound: Essentia emoMusic valence · the lyrics stay on my computer';
+
+      // themes
+      var TH = LY.themes, thPick = 0, CNm = LY.cluster_names;
+      // themes are relative to my own library (z-scores), so every theme covers a similar share of songs overall;
+      // what differs is WHERE each theme lives: the share of each cluster's songs about it
+      var thEl = ready('th-share');
+      function drawTheme() {
+        var t = TH[thPick], cnt = CNm.map(function () { return 0; }), tot = CNm.map(function () { return 0; }), all = 0, hit = 0;
+        for (var j = 0; j < N; j++) {
+          if (S.lk[j] !== 0 || S.th[j] == null) continue;
+          var on = S.th[j].indexOf(thPick) >= 0; all++; hit += on;
+          if (S.k[j] != null) { tot[S.k[j]]++; cnt[S.k[j]] += on; }
+        }
+        document.getElementById('th-title').textContent = 'Most about it · ' + t;
+        document.getElementById('th-list').innerHTML = songList(LY.theme_top[t].slice(0, 10), function (j) { return S.lang[j] != null ? LANG[S.lang[j]] : ''; });
+        var ks = CNm.map(function (c, k) { return k; }).filter(function (k) { return tot[k] >= 20; });
+        Plotly.react(thEl, [{ type: 'bar', orientation: 'h', y: ks.map(function (k) { return CNm[k]; }), x: ks.map(function (k) { return Math.round(1000 * cnt[k] / tot[k]) / 10; }),
+          marker: { color: ks.map(function (k) { return SERIES[k % SERIES.length]; }) }, customdata: ks.map(function (k) { return cnt[k] + ' of ' + tot[k]; }),
+          hovertemplate: '%{y}: %{x}% (%{customdata} songs)<extra></extra>' }],
+          base({ margin: { l: 190, r: 16, t: 36, b: 44 }, showlegend: false,
+                 title: { text: 'Where “' + t + '” lives: share of each cluster’s songs', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+                 shapes: [{ type: 'line', x0: 100 * hit / all, x1: 100 * hit / all, yref: 'paper', y0: 0, y1: 1, line: { color: INK, width: 1, dash: 'dot' } }],
+                 annotations: [{ x: 100 * hit / all, y: 1, yref: 'paper', text: 'all songs', showarrow: false, yanchor: 'bottom', font: { color: LABEL, size: 11 } }],
+                 xaxis: axis('% of the cluster’s songs with lyrics'), yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+      }
+      var tp = document.getElementById('th-pills');
+      TH.forEach(function (t, n) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.textContent = t; b.setAttribute('aria-pressed', String(n === 0));
+        b.addEventListener('click', function () { thPick = n; tp.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); drawTheme(); });
+        tp.appendChild(b);
+      });
+      drawTheme();
+      // each cluster's signature theme: the one it is most above my average on
+      var sig = LY.theme_cluster.map(function (row, k) {
+        var best = 0; row.forEach(function (v, n) { if (v != null && v > row[best]) best = n; }); return CNm[k] + ' → ' + TH[best];
+      }).filter(function (x, k) { return (LY.kind_cluster[k].lyrics || 0) >= 30; });
+      document.getElementById('th-finding').textContent = 'Each taste cluster has its own subject. Its theme most above my average: ' + sig.join(', ') + '.';
+      var zmax = 1;
+      Plotly.newPlot(ready('th-cluster'), [{
+        type: 'heatmap', z: LY.theme_cluster, x: TH, y: CNm.map(function (c, k) { return c + ' (' + (LY.kind_cluster[k].lyrics || 0) + ')'; }),
+        zmin: -zmax, zmax: zmax, xgap: 1, ygap: 1, colorscale: [[0, '#E2703F'], [0.5, '#1A1D20'], [1, '#4F9BE8']],
+        colorbar: { title: { text: 'σ vs my<br>average song', font: { color: LABEL } }, tickfont: { color: LABEL }, thickness: 10, len: 0.6, outlinewidth: 0 },
+        hovertemplate: '%{y}<br>%{x}: %{z:+.2f} σ<extra></extra>'
+      }], base({ margin: { l: 220, r: 16, t: 16, b: 110 },
+                 xaxis: axis('', { tickangle: -35, tickfont: { color: INK, size: 11 }, showgrid: false }),
+                 yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 12 }, showgrid: false }) }), CONFIG);
+      if (LY.era_themes && LY.era_themes.length) {
+        Plotly.newPlot(ready('th-eras'), [{
+          type: 'heatmap', z: LY.era_themes.map(function (e) { return e.z; }), x: TH, y: LY.era_themes.map(function (e) { return e.name + ' · ' + e.key.replace('..', '–'); }),
+          zmin: -0.6, zmax: 0.6, xgap: 1, ygap: 1, colorscale: [[0, '#E2703F'], [0.5, '#1A1D20'], [1, '#4F9BE8']], showscale: false,
+          hovertemplate: '%{y}<br>%{x}: %{z:+.2f} σ<extra></extra>'
+        }], base({ margin: { l: 300, r: 16, t: 16, b: 110 },
+                   xaxis: axis('', { tickangle: -35, tickfont: { color: INK, size: 11 }, showgrid: false }),
+                   yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 12 }, showgrid: false }) }), CONFIG);
+      } else { document.getElementById('th-eras').hidden = true; document.getElementById('th-eras-head').hidden = true; }
+      document.getElementById('th-words').innerHTML = Object.keys(LY.words_cluster).map(function (c) {
+        return '<div class="wcard"><h4>' + esc(c) + '</h4><div class="chips">' + LY.words_cluster[c].map(function (w) {
+          return '<span class="wchip" title="in ' + Math.round(w.share * 100) + '% of the cluster\'s songs, ' + w.lift + '× my average">' + esc(w.w) +
+                 '<small>' + Math.round(w.share * 100) + '%</small></span>';
+        }).join('') + '</div></div>';
+      }).join('');
+
+      // languages + writing style
+      // languages with fewer than 10 songs are grouped: on short or repetitive lyrics the detector is often unsure
+      var langs = LY.languages.filter(function (l) { return l.songs >= 10; }).reverse();
+      var rare = LY.languages.filter(function (l) { return l.songs < 10; });
+      var lgY = langs.map(function (l) { return l.lang; }), lgX = langs.map(function (l) { return l.songs; });
+      if (rare.length) { lgY.unshift('Other (' + rare.length + ' languages)'); lgX.unshift(rare.reduce(function (a, l) { return a + l.songs; }, 0)); }
+      lgY.unshift('Instrumental'); lgX.unshift(nIns);
+      Plotly.newPlot(ready('lg-bar'), [{ type: 'bar', orientation: 'h', y: lgY, x: lgX, text: lgX.map(fmt), textposition: 'outside', cliponaxis: false,
+        textfont: { color: INK }, marker: { color: lgY.map(function (l, n) { return n === 0 || (rare.length && n === 1) ? OTHER : '#4F9BE8'; }) }, hovertemplate: '%{y}: %{x} songs<extra></extra>' }],
+        base({ margin: { l: 160, r: 40, t: 36, b: 44 }, showlegend: false,
+               title: { text: 'Songs by language of the lyrics', x: 0.03, xref: 'container', font: { color: INK, size: 14 } },
+               xaxis: axis('songs'), yaxis: axis('', { tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+      var MET = [['wpm', 'Words per minute'], ['rep', 'Repetition'], ['voc', 'Vocabulary variety']], metPick = 0, styleEl = ready('lg-style');
+      function drawStyle() {
+        var m = MET[metPick][0], tr = [];
+        CNm.forEach(function (c, k) {
+          var xs = []; for (var j = 0; j < N; j++) if (S.k[j] === k && S.lk[j] === 0 && S[m][j] != null) xs.push(m === 'rep' ? S[m][j] * 100 : m === 'voc' ? S[m][j] * 100 : S[m][j]);
+          tr.push({ type: 'box', orientation: 'h', x: xs, name: c, marker: { color: SERIES[k % SERIES.length] }, line: { width: 1.5 }, boxpoints: false,
+                    hoverinfo: 'x', fillcolor: 'rgba(0,0,0,0)' });
+        });
+        Plotly.react(styleEl, tr, base({ margin: { l: 190, r: 16, t: 16, b: 48 }, showlegend: false,
+          xaxis: axis(MET[metPick][1] + (m === 'wpm' ? '' : ' (%)')), yaxis: axis('', { autorange: 'reversed', tickfont: { color: INK, size: 12 }, gridcolor: 'rgba(0,0,0,0)' }) }), CONFIG);
+      }
+      var mp = document.getElementById('lg-pills');
+      MET.forEach(function (mt, n) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.textContent = mt[1]; b.setAttribute('aria-pressed', String(n === 0));
+        b.addEventListener('click', function () { metPick = n; mp.querySelectorAll('.pill').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); }); drawStyle(); });
+        mp.appendChild(b);
+      });
+      drawStyle();
+      var wpmBy = CNm.map(function (c, k) { var xs = []; for (var j = 0; j < N; j++) if (S.k[j] === k && S.lk[j] === 0 && S.wpm[j] != null) xs.push(S.wpm[j]); return xs.length ? median(xs) : 0; });
+      var fast = wpmBy.indexOf(Math.max.apply(null, wpmBy)), slow = wpmBy.indexOf(Math.min.apply(null, wpmBy.filter(function (x) { return x > 0; })));
+      var L1 = LY.languages[0], L2 = LY.languages[1];
+      document.getElementById('lg-finding').textContent = Math.round(100 * L1.songs / nLy) + '% of my songs with lyrics are in ' + L1.lang +
+        (L2 ? ', ' + Math.round(100 * L2.songs / nLy) + '% in ' + L2.lang : '') + ', and ' + fmt(LY.mixed) + ' mix two languages' +
+        (Object.keys(LY.mixed_pairs).length ? ' (mostly ' + Object.keys(LY.mixed_pairs)[0] + ')' : '') + '. ' +
+        CNm[fast] + ' packs the most words (median ' + Math.round(wpmBy[fast]) + ' a minute), ' + CNm[slow] + ' the fewest (' + Math.round(wpmBy[slow]) + ').';
+
+      var MO = LY.monthly;
+      if (MO) {
+        var LCOL = { Instrumental: '#3A4550', 'Few words': '#5B6873', Other: OTHER };
+        var lt = MO.langs.map(function (l, n) {
+          return { type: 'scatter', mode: 'lines', stackgroup: 'one', name: l, x: MO.months, y: MO.share[l].map(function (v) { return v * 100; }),
+                   line: { width: 0.5, color: LCOL[l] || SERIES[n % SERIES.length] }, fillcolor: LCOL[l] || SERIES[n % SERIES.length],
+                   hovertemplate: '%{x}: ' + l + ' %{y:.0f}%<extra></extra>' };
+        });
+        Plotly.newPlot(ready('lg-time'), lt, base({ margin: { l: 50, r: 16, t: TOP_GAP, b: 40 }, hovermode: 'x unified',
+          legend: Object.assign({ font: { color: INK }, bgcolor: 'rgba(0,0,0,0)', orientation: 'h', y: 1.08 }, LEG_TOP),
+          xaxis: axis('', { type: 'date' }), yaxis: axis('% of listening hours', { range: [0, 100] }) }), CONFIG);
+        var zs = function (a) { var v = a.filter(function (x) { return x != null; }), m = v.reduce(function (s, x) { return s + x; }, 0) / v.length;
+          var sd = Math.sqrt(v.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / v.length) || 1; return a.map(function (x) { return x == null ? null : (x - m) / sd; }); };
+        Plotly.newPlot(ready('lg-val'), [
+          { type: 'scatter', mode: 'lines', name: 'Words', x: MO.months, y: zs(MO.valence_words), line: { color: '#4F9BE8', width: 2 }, connectgaps: false, hovertemplate: '%{x}: words %{y:+.1f} σ<extra></extra>' },
+          { type: 'scatter', mode: 'lines', name: 'Sound', x: MO.months, y: zs(MO.valence_sound), line: { color: SERIES[2], width: 2 }, connectgaps: false, hovertemplate: '%{x}: sound %{y:+.1f} σ<extra></extra>' }
+        ], base({ margin: { l: 50, r: 16, t: 16, b: 40 }, hovermode: 'x unified', legend: { font: { color: INK }, orientation: 'h', y: 1.1 },
+                  xaxis: axis('', { type: 'date' }), yaxis: axis('happier →  (σ vs my average month)', { zeroline: true, zerolinecolor: LABEL }) }), CONFIG);
+      } else { ['lg-time', 'lg-time-head', 'lg-val', 'lg-val-head'].forEach(function (id) { document.getElementById(id).hidden = true; }); }
+      var BH = LY.behaviour;
+      if (BH) {
+        var bf = [['repetition', 'Repetition'], ['wpm', 'Words per minute'], ['vocabulary', 'Vocabulary variety'], ['valence', 'Positive words'], ['words', 'Length (words)']];
+        Plotly.newPlot(ready('lg-beh'), [
+          { type: 'bar', name: 'with how often I skip it', x: bf.map(function (f) { return f[1]; }), y: bf.map(function (f) { return BH.skip[f[0]]; }), marker: { color: SERIES[1] },
+            hovertemplate: '%{x}: ρ = %{y:.2f} with skip rate<extra></extra>' },
+          { type: 'bar', name: 'with how often I stream it', x: bf.map(function (f) { return f[1]; }), y: bf.map(function (f) { return BH.plays[f[0]]; }), marker: { color: '#4F9BE8' },
+            hovertemplate: '%{x}: ρ = %{y:.2f} with streams<extra></extra>' }
+        ], base({ barmode: 'group', margin: { l: 56, r: 16, t: 16, b: 60 }, legend: { font: { color: INK }, orientation: 'h', y: 1.12 },
+                  xaxis: axis('', { tickfont: { color: INK, size: 12 } }), yaxis: axis('rank correlation ρ', { range: [-0.3, 0.3], zeroline: true, zerolinecolor: LABEL }) }), CONFIG);
+        var all = []; bf.forEach(function (f) { all.push([f[1], 'skip', BH.skip[f[0]]], [f[1], 'plays', BH.plays[f[0]]]); });
+        all.sort(function (a, b) { return Math.abs(b[2]) - Math.abs(a[2]); });
+        var sk = BH.skip_by_kind || {};
+        document.getElementById('lg-beh-finding').textContent = 'Across ' + fmt(BH.songs) + ' songs I played at least 10 times, the lyrics barely change how I listen: ' +
+          'the strongest link is ' + all[0][0].toLowerCase() + ' with ' + (all[0][1] === 'skip' ? 'skipping' : 'streaming') + ' (ρ = ' + all[0][2].toFixed(2) + ', where ±1 would be perfect). ' +
+          (sk.instrumental != null && sk.lyrics != null ? 'I skip instrumentals ' + Math.round(sk.instrumental * 100) + '% of the time and songs with lyrics ' + Math.round(sk.lyrics * 100) + '%.' : '');
+      } else { ['lg-beh', 'lg-beh-head'].forEach(function (id) { document.getElementById(id).hidden = true; }); }
+      document.getElementById('lg-method').textContent = 'language: lingua (whole text, and line by line for a second language) · words per minute: words ÷ song length · ' +
+        'repetition: 1 − zlib-compressed size ÷ raw size · vocabulary: MATTR, the share of different words in every 50-word window · themes: ' +
+        LY.models.embed + ' embeddings, cosine similarity to the theme sentences, z-scored per song then per theme · ρ: Spearman rank correlation';
+    })();
 
     // ---------- A4 moods ----------
     var md = D.moods, order = md.names.map(function (n, i) { return i; }).sort(function (x, y) { return md.library[x] - md.library[y]; });
@@ -1727,6 +2031,8 @@
         markOn(exEl, val(exX.value, i), val(exY.value, i), three ? val(exZ.value, i) : null);
       }
       if (D.clap && mapEl2 && mapEl2.data) markOn(mapEl2, S.cx[i], S.cy[i]);
+      var lyEl = document.getElementById('ly-scatter');
+      if (D.lyrics && lyEl && lyEl.data) markOn(lyEl, S.lv[i] != null ? S.v[i] : null, S.lv[i]);
       var hid = document.getElementById('hist-hidden');
       if (D.history && D.history.hidden && hid && hid.data) {
         var sc2 = D.history.hidden.scatter, n = sc2.idx.indexOf(i);
@@ -1751,7 +2057,7 @@
       var from = S.c && S.c[i] != null ? 'from ' + O.name[S.c[i]] : null;
       var inCluster = CL && S.k[i] != null ? 'cluster: ' + CLN[S.k[i]] : null;
       var played = S.streams && S.streams[i] ? 'streamed ' + S.streams[i] + '×' + (S.first_play[i] ? ' since ' + S.first_play[i] : '') : null;
-      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from, inCluster, played].filter(Boolean);
+      var facts = [G[S.g[i]], S.style[i], S.year[i], S.bpm[i] && S.bpm[i] + ' BPM', S.key[i], from, inCluster, played, lyricFact(i)].filter(Boolean);
       var meters = ['happy', 'sad', 'relaxed', 'danceable', 'acoustic', 'electronic'].map(function (m) {
         var p = Math.round((S[m][i] || 0) * 100);
         return '<div class="meter"><span>' + MOOD_NAMES[m] + '</span><span class="bar"><i style="width:' + p + '%"></i></span><b>' + p + '%</b></div>';
@@ -1800,13 +2106,25 @@
       }).join('');
       drawerBody.innerHTML = '<h3>' + esc(S.name[i]) + '</h3><div class="by">' + esc(S.artist[i]) + '</div>' +
         '<div class="facts">' + facts.map(function (f) { return '<span class="fact">' + esc(f) + '</span>'; }).join('') + '</div>' +
-        '<div class="meters">' + meters + '</div>' +
+        '<div class="meters">' + meters + '</div>' + lyricLine(i) +
         '<div class="side">Sounds most like</div><ul class="alike">' + alike + '</ul>' +
         '<div class="links"><a href="https://open.spotify.com/track/' + encodeURIComponent(S.id[i]) + '" target="_blank" rel="noopener">Open in Spotify</a>' +
         '<button type="button" class="pill" data-show-map="' + i + '">Show on the map</button></div>';
       drawer.hidden = false;
     }
     function pickSong(i) { choose(i); openDrawer(i); }
+    function lyricFact(i) {
+      if (!D.lyrics || S.lk[i] == null) return null;
+      if (S.lk[i] === 1) return 'instrumental';
+      return S.lang[i] != null ? D.lyrics.languages[S.lang[i]].lang + (S.lang2[i] != null ? ' + ' + D.lyrics.languages[S.lang2[i]].lang : '') + ' lyrics' : null;
+    }
+    function lyricLine(i) {
+      if (!D.lyrics || S.lv[i] == null) return '';
+      var th = (S.th[i] || []).map(function (t) { return D.lyrics.themes[t]; });
+      var w = S.lv[i], tone = w > 0.25 ? 'positive' : w < -0.25 ? 'negative' : 'neutral';
+      return '<p class="hint" style="margin:0 0 10px">Words: ' + (th.length ? esc(th.join(' · ')) + ' · ' : '') + tone + ' (' + (w > 0 ? '+' : '') + w.toFixed(2) + ')' +
+             (S.wpm[i] ? ' · ' + S.wpm[i] + ' words/min' : '') + '</p>';
+    }
     var quick = document.getElementById('quickfind');
     quick.addEventListener('change', function () {
       var i = lookup[quick.value.trim().toLowerCase()];
@@ -1849,7 +2167,7 @@
 })();
 
 // Views: one group of sections at a time, chosen by the tabs (and by #name in the address, so views can be shared)
-var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'],
+var VIEWS = { map: ['sound'], clusters: ['clusters'], feeling: ['feeling', 'mood'], explore: ['explore'], listen: ['listen'], lyrics: ['words', 'themes', 'languages'],
               anatomy: ['harmony', 'rhythm', 'instruments', 'signal'], history: ['eras', 'history', 'time'], origins: ['origins'], ml: ['discover', 'skips'] };
 var SECTION_VIEW = {};
 Object.keys(VIEWS).forEach(function (v) { VIEWS[v].forEach(function (id) { SECTION_VIEW[id] = v; }); });

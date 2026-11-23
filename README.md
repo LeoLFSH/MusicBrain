@@ -17,13 +17,15 @@ analysed by how it sounds, how it feels and where it comes from.
 | Tempo | BPM distribution per genre | Essentia RhythmExtractor2013 |
 | Instruments | 40 instruments detected | MTG-Jamendo instrument model |
 | Time | Release years and when songs were saved | Spotify Web API |
+| Lyrics | Do the words feel like the sound (word sentiment vs. audio valence), zero-shot lyric themes per cluster and per era, distinctive words per cluster (language-adjusted lift), languages over time, words per minute / repetition / vocabulary, and whether lyrics change how I listen. Only numbers and single words are published, never lyrics | LRCLIB + verified Genius matches; lingua; multilingual-e5 embeddings; XLM-RoBERTa sentiment; zlib repetition; MATTR |
 | Music eras | The chapters of my listening: months as vectors (cluster mix, moods, discovery, focus), optimal change-point segmentation, number of eras by BIC, taste trajectory | dynamic programming, PCA |
 | History | Every play since 2018: weekly calendar, time of day, taste clusters over time, top artists per year, forgotten favourites | Spotify Extended Streaming History (IP addresses dropped) |
 | ML lab: recommender | New music from outside my library: Essentia + CLAP features, cross-fitted neural taste model chosen by an artist-level holdout against a control group, MMR diversity, novelty bonus | PyTorch, scikit-learn |
 | ML lab: skip prediction | Will I skip a song? Logistic regression vs gradient boosting vs MLP on 174k plays, time-based split, calibration, feature-family importance, and two data-leakage lessons | scikit-learn, Spotify streaming history |
 | Origins | World map of where my artists were born or formed | MusicBrainz (via ISRC), Last.fm tags |
 
-Audio comes from 30-second previews. Metadata from Spotify, Last.fm, Discogs and MusicBrainz.
+Audio comes from 30-second previews. Metadata from Spotify, Last.fm, Discogs and MusicBrainz. Lyrics from LRCLIB and Genius,
+analysed locally.
 
 ## Files
 
